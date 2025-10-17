@@ -1,0 +1,221 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --primary-light: #60a5fa;
+  --accent: #0ea5e9;
+  --bg: #ffffff;
+  --surface: #f8fafc;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --shadow-soft: 0 12px 28px rgba(15, 23, 42, 0.08);
+  --shadow-hover: 0 20px 50px rgba(15, 23, 42, 0.12);
+}
+
+html, body, #__next {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: #0f172a;
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1 0 auto;
+}
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  h1, h2, h3, h4 {
+    color: #0f172a;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  h1 {
+    font-size: clamp(2.5rem, 5vw, 3.75rem);
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+  }
+
+  h2 {
+    font-size: clamp(2rem, 4vw, 2.75rem);
+    line-height: 1.15;
+    margin-bottom: 1.25rem;
+  }
+
+  h3 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    margin-bottom: 1rem;
+  }
+
+  h4 {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  p {
+    color: #475569;
+    margin-bottom: 1.25rem;
+  }
+
+  strong {
+    color: #0f172a;
+  }
+
+  a {
+    color: var(--primary);
+    text-decoration: none;
+    transition: color 0.2s ease, text-decoration-color 0.2s ease;
+  }
+
+  a:hover,
+  a:focus-visible {
+    color: var(--primary-dark);
+    text-decoration: underline;
+  }
+
+  blockquote {
+    border-left: 3px solid var(--primary-light);
+    padding: 0.75rem 1rem;
+    background: rgba(37, 99, 235, 0.05);
+    border-radius: 0.5rem;
+    color: #0f172a;
+    margin: 1.5rem 0;
+  }
+
+  ul,
+  ol {
+    margin: 0 0 1.25rem 1.25rem;
+    color: #475569;
+  }
+
+  ::selection {
+    background: var(--primary-light);
+    color: #ffffff;
+  }
+}
+
+@layer components {
+  .container {
+    max-width: 1100px;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: var(--primary);
+    color: #ffffff;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    box-shadow: var(--shadow-soft);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  }
+
+  .btn-primary:hover,
+  .btn-primary:focus-visible {
+    background-color: var(--primary-dark);
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.25);
+    outline-offset: 2px;
+  }
+
+  .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    color: #0f172a;
+    font-weight: 600;
+    background: #ffffff;
+    transition: border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .btn-outline:hover,
+  .btn-outline:focus-visible {
+    border-color: var(--primary);
+    color: var(--primary);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .card {
+    background: #ffffff;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-soft);
+    padding: 1.5rem;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+
+  .card:hover {
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    background: rgba(37, 99, 235, 0.12);
+    color: var(--primary);
+  }
+
+  .badge-otc {
+    background: rgba(37, 99, 235, 0.12);
+    color: var(--primary);
+  }
+
+  .badge-restricted {
+    background: rgba(248, 113, 113, 0.16);
+    color: #dc2626;
+  }
+}
+
+@layer utilities {
+  .section-spacing {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
+
+  @media (min-width: 768px) {
+    .section-spacing {
+      padding-top: 5rem;
+      padding-bottom: 5rem;
+    }
+  }
+
+  .shadow-inset {
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
+  }
+}
