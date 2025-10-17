@@ -21,6 +21,20 @@ const providerProfiles = [
     bio: 'Supports mothers through antenatal visits, labour referrals, and postnatal follow-ups, ensuring respectful maternity care around the clock.',
     highlights: ['Skilled in labour support and postpartum monitoring', 'Counsels on newborn care, breastfeeding, and family planning', 'Coordinates night-call maternity coverage with the clinical officer team'],
     availability: 'On-call every day · Book ahead for dedicated sessions'
+  },
+  {
+    name: 'Dr. Clifford Amaganga, MD',
+    title: 'Consultant Surgeon',
+    bio: 'Provides advanced surgical consults, peri-operative planning, and specialist reviews for complex emergency and elective cases across Busia County.',
+    highlights: ['Regional consultant surgeon with referral privileges', 'Performs specialist outreach theatres by arrangement', 'Supports emergency stabilisation protocols for surgical cases'],
+    availability: 'Available upon appointment confirmation only'
+  },
+  {
+    name: 'Dr. Odero, MD',
+    title: 'Consultant Physician',
+    bio: 'Covers internal medicine and family physician consults, reviewing chronic disease cases and advanced diagnostics in partnership with our resident team.',
+    highlights: ['Consults on complex internal medicine presentations', 'Aligns chronic care plans with tertiary specialists', 'Runs focused clinics based on appointment schedules'],
+    availability: 'Appointment-based · Scheduled according to demand'
   }
 ]
 
