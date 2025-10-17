@@ -24,9 +24,15 @@ SMTP_PASS=your-password
 # Optional overrides
 SMTP_FROM="Mwein Medical <no-reply@mweinmedical.co.ke>"
 CONTACT_EMAIL=appointments@mweinmedical.co.ke
+# Used by the sitemap/robots metadata helpers
+NEXT_PUBLIC_SITE_URL=https://preview.mweinmedical.co.ke
+# Or, if you prefer to keep the value server-side only
+# SITE_URL=https://preview.mweinmedical.co.ke
 ```
 
 If SMTP credentials are omitted the API logs submissions to the server console so the frontend flow remains functional during development.
+
+Setting either `NEXT_PUBLIC_SITE_URL` or `SITE_URL` ensures the dynamic sitemap, robots.txt route, and canonical metadata reference the correct deployment domain. Values are normalised (protocol + no trailing slash) and default to `https://mweinmedical.co.ke` if unset.
 
 ## Contact/booking form hardening
 
@@ -87,6 +93,18 @@ npm run start
 ```
 
 Expose port `3000` (reverse proxy with Nginx/Traefik if desired) and set environment variables for SMTP and contact email inside your host or container orchestrator.
+
+## Release checklist
+
+Before promoting a build to production, run the fast quality gates locally:
+
+```bash
+npm run lint
+npm run test -- --run
+npm run build
+```
+
+Lint keeps the codebase aligned with Next.js best practices, the Vitest suite verifies spam-prevention logic, and the production build catches type errors plus confirms every static route renders correctly.
 
 ## Production considerations
 

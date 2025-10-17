@@ -60,12 +60,21 @@ export default function DonateExperience() {
             typeof item.firstName === 'string' &&
             typeof item.amount === 'number' &&
             (item.channel === 'M-Pesa' || item.channel === 'PayPal' || item.channel === 'Cash/Other')
+            && (item.shareConsent === 'pending' || item.shareConsent === 'granted' || item.shareConsent === 'declined')
           )
         })
-        .map(item => ({
-          ...item,
-          shareConsent: item.shareConsent === 'granted' || item.shareConsent === 'declined' ? item.shareConsent : 'pending'
-        }))
+        .map(item => {
+          const shareConsent: ConsentState =
+            item.shareConsent === 'granted'
+              ? 'granted'
+              : item.shareConsent === 'declined'
+                ? 'declined'
+                : 'pending'
+          return {
+            ...item,
+            shareConsent
+          }
+        })
       setContributions(restored)
     } catch (error) {
       console.error('Unable to restore contribution log', error)
@@ -467,6 +476,16 @@ export default function DonateExperience() {
               Email <a href="mailto:mweinmedical@gmail.com" className="text-primary">mweinmedical@gmail.com</a> and we&rsquo;ll send bank details, pledges forms, or corporate partnership options.
             </p>
             <p className="text-xs text-slate-500">We are grateful for every supporter investing in Mungatsi&rsquo;s health.</p>
+          </div>
+
+          <div className="card space-y-3 border-primary/20 bg-primary/5">
+            <h3 className="text-lg font-semibold text-primary">Accountability & reporting</h3>
+            <p className="text-sm text-primary/80">
+              We log donations securely and issue statements on request. Financial summaries are shared with community partners every quarter,
+              and sensitive details follow our <a href="/privacy" className="underline">privacy policy</a> and Kenya Data Protection Act guidelines.
+            </p>
+            <p className="text-xs text-primary/70">Need a receipt or impact report? Email <a href="mailto:mweinmedical@gmail.com" className="underline">mweinmedical@gmail.com</a> or WhatsApp{' '}
+              <a href="https://wa.me/254707711888" className="underline">+254 707 711 888</a>.</p>
           </div>
         </div>
       </div>
