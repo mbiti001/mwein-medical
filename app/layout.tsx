@@ -1,12 +1,16 @@
 import '../styles/globals.css'
 import { ReactNode } from 'react'
 import Link from 'next/link'
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import Header from '../components/Header'
-import SEOProvider from '../components/SEOProvider'
 import { clinic, getSiteUrl } from '../lib/siteConfig'
 
 const siteUrl = getSiteUrl()
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1
+}
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -33,11 +37,6 @@ export const metadata: Metadata = {
   alternates: {
     canonical: siteUrl
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1
-  },
-  themeColor: '#2563eb',
   twitter: {
     card: 'summary_large_image'
   }
@@ -47,7 +46,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <SEOProvider />
         <Header />
         {/* JSON-LD LocalBusiness */}
         <script
