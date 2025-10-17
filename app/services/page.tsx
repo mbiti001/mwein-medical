@@ -68,8 +68,9 @@ export default function Services() {
             </div>
             <ul className="mt-6 space-y-2 text-slate-600">
               <li>✓ SHA & Yatta insurance accepted (more partners coming soon)</li>
+              <li>✓ Full suite of family planning methods on-site (implants, IUCDs, injectables, oral options)</li>
               <li>✓ On-site lab & pharmacy</li>
-              <li>✓ Emergency coordination with Busia County facilities</li>
+              <li>✓ Emergency coordination every minute with on-call clinicians and partner ambulances</li>
             </ul>
           </div>
           <div>

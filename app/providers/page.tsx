@@ -52,7 +52,8 @@ export default function Providers() {
             <ul className="text-sm text-slate-600 space-y-2">
               <li>• Multidisciplinary team with specialists visiting twice monthly</li>
               <li>• Continuous medical education and mentorship for emerging clinicians</li>
-              <li>• 24/7 emergency coordination across Busia County facilities</li>
+              <li>• Family planning counselling, insertions, and follow-ups delivered by certified nurses</li>
+              <li>• Minute-by-minute emergency coordination across Busia County facilities</li>
             </ul>
           </div>
           <div>

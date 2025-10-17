@@ -16,9 +16,19 @@ export default function Home() {
             <h1>Mwein Medical Services</h1>
             <p className="text-xl text-slate-700 italic">Exceptional care close to you, every hour of the day.</p>
             <p className="mb-8">
-              Community clinic in <strong>Mungatsi, Busia County</strong>. Open <strong>24 hours, 7 days a week</strong>. We accept <strong>SHA</strong> and <strong>Yatta Insurance</strong>, and we&rsquo;re actively onboarding additional partners, while delivering laboratory, maternity, and specialty care under one roof.
+              Community clinic in <strong>Mungatsi, Busia County</strong>. Open <strong>24 hours, 7 days a week</strong>. We provide the full mix of family planning methods on-site, stabilise emergencies every minute, and accept <strong>SHA</strong> plus <strong>Yatta Insurance</strong> while onboarding additional partners.
             </p>
-            <div className="flex flex-wrap gap-3">
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-primary/20 bg-white/60 p-4 shadow-sm">
+                <p className="text-sm font-semibold text-primary">All family planning methods available daily</p>
+                <p className="text-xs text-slate-600">Implants, IUCDs, injectables, oral contraception, counselling, and same-day reviews.</p>
+              </div>
+              <div className="rounded-xl border border-primary/20 bg-white/60 p-4 shadow-sm">
+                <p className="text-sm font-semibold text-primary">Emergency-ready every minute</p>
+                <p className="text-xs text-slate-600">On-call clinicians, oxygen, and referral transport coordination around the clock.</p>
+              </div>
+            </div>
+            <div className="mt-6 flex flex-wrap gap-3">
               <a href="/contact" className="btn-primary">Book appointment</a>
               <a href="tel:+254707711888" className="btn-outline">Call +254 707 711 888</a>
             </div>
