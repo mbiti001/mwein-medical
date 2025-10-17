@@ -5,7 +5,7 @@ const providerProfiles = [
     name: 'Dr. Mercy Wanyama, MBChB',
     title: 'Medical Director · Family Physician',
     bio: 'Leads clinical governance, chronic disease programs, and community outreach for maternal and child health.',
-    highlights: ['15+ years in family medicine', 'NHIF/SHA panel doctor', 'Certified in ultrasound basics'],
+  highlights: ['15+ years in family medicine', 'SHA & Yatta insurance panel doctor', 'Certified in ultrasound basics'],
     availability: 'Mon–Sat · 8:00 am – 6:00 pm'
   },
   {

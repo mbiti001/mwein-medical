@@ -67,7 +67,7 @@ export default function Services() {
               <a href="tel:+254707711888" className="btn-outline">Call +254 707 711 888</a>
             </div>
             <ul className="mt-6 space-y-2 text-slate-600">
-              <li>✓ NHIF/SHA accepted</li>
+              <li>✓ SHA & Yatta insurance accepted (more partners coming soon)</li>
               <li>✓ On-site lab & pharmacy</li>
               <li>✓ Emergency coordination with Busia County facilities</li>
             </ul>

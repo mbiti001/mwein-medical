@@ -3,6 +3,7 @@ import { ReactNode } from 'react'
 import Link from 'next/link'
 import type { Metadata, Viewport } from 'next'
 import Header from '../components/Header'
+import DonationAttentionBanner from '../components/DonationAttentionBanner'
 import { clinic, getSiteUrl } from '../lib/siteConfig'
 
 const siteUrl = getSiteUrl()
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         <Header />
+        <DonationAttentionBanner />
         {/* JSON-LD LocalBusiness */}
         <script
           type="application/ld+json"

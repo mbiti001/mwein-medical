@@ -16,7 +16,7 @@ export default function Home() {
             <h1>Mwein Medical Services</h1>
             <p className="text-xl text-slate-700 italic">Exceptional care close to you, every hour of the day.</p>
             <p className="mb-8">
-              Community clinic in <strong>Mungatsi, Busia County</strong>. Open <strong>24 hours, 7 days a week</strong>. We accept <strong>NHIF/SHA</strong> and deliver laboratory, maternity, and specialty care under one roof.
+              Community clinic in <strong>Mungatsi, Busia County</strong>. Open <strong>24 hours, 7 days a week</strong>. We accept <strong>SHA</strong> and <strong>Yatta Insurance</strong>, and we&rsquo;re actively onboarding additional partners, while delivering laboratory, maternity, and specialty care under one roof.
             </p>
             <div className="flex flex-wrap gap-3">
               <a href="/contact" className="btn-primary">Book appointment</a>
