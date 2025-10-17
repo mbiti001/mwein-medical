@@ -2,33 +2,26 @@ import { buildPageMetadata } from '../../lib/metadata'
 
 const providerProfiles = [
   {
-    name: 'Dr. Mercy Wanyama, MBChB',
-    title: 'Medical Director · Family Physician',
-    bio: 'Leads clinical governance, chronic disease programs, and community outreach for maternal and child health.',
-  highlights: ['15+ years in family medicine', 'SHA & Yatta insurance panel doctor', 'Certified in ultrasound basics'],
-    availability: 'Mon–Sat · 8:00 am – 6:00 pm'
+    name: 'Mbiti Edwin',
+    title: 'Clinical Officer · Emergency & Family Medicine',
+    bio: 'Leads our frontline response for walk-in emergencies, stabilisation, and family medicine reviews with five years of community clinic experience.',
+    highlights: ['5 years providing emergency and family medicine in Busia County', 'Advanced trauma & life support trained', 'Coordinates referral handovers and tele-triage'],
+    availability: 'By local arrangement · Call/WhatsApp to schedule'
   },
   {
-    name: 'Dr. Brian Kibe, MMed',
-    title: 'Consulting Physician · Internal Medicine',
-    bio: 'Oversees specialist clinics for hypertension, diabetes, and heart disease with monthly in-person sessions.',
-    highlights: ['Fellow, College of Physicians of East Africa', 'Teleconsult support between visits', 'Coordinates tertiary referrals'],
-    availability: 'Special clinics · Every 2nd & 4th Friday'
+    name: 'Kosgei Kipchumba',
+    title: 'Clinical Officer · Reproductive & General Clinical Medicine',
+    bio: 'Champions comprehensive reproductive health consultations, contraceptive counselling, and general outpatient clinics for all ages.',
+    highlights: ['Expertise in long-acting family planning insertions and follow-up', 'Wide-ranging general practice for acute and chronic conditions', 'Leads health education during community outreach days'],
+    availability: 'Appointment-based clinics · Slots released weekly'
   },
   {
-    name: 'Sr. Alice Amukoya, KRCHN',
-    title: 'Senior Registered Nurse · Antenatal & Child Wellness',
-    bio: 'Guides ANC journeys, newborn assessments, immunizations, and family planning education for mothers and caregivers.',
-    highlights: ['Lamaze-certified childbirth educator', 'KEPI immunization trainer', 'Leads breastfeeding support groups'],
-    availability: 'Mon–Sat · 7:30 am – 5:30 pm'
-  },
-  {
-    name: 'Sr. Peter Ouma, KRPN',
-    title: 'Clinical Officer · Emergency & Minor Procedures',
-    bio: 'Manages urgent walk-ins, wound care, circumcision program, and coordinates ambulance transfers when required.',
-    highlights: ['ATLS & ACLS certified', 'Trainer for community first responders', 'Leads evening telehealth triage'],
-    availability: 'Daily · 10:00 am – 10:00 pm'
-  },
+    name: 'Nancy Okisai, KRCHN',
+    title: 'Registered Community Health Nurse · Maternity & Postnatal Care',
+    bio: 'Supports mothers through antenatal visits, labour referrals, and postnatal follow-ups, ensuring respectful maternity care around the clock.',
+    highlights: ['Skilled in labour support and postpartum monitoring', 'Counsels on newborn care, breastfeeding, and family planning', 'Coordinates night-call maternity coverage with the clinical officer team'],
+    availability: 'On-call every day · Book ahead for dedicated sessions'
+  }
 ]
 
 export const metadata = buildPageMetadata({
@@ -46,12 +39,12 @@ export default function Providers() {
             <span className="badge mb-4">Clinical Team</span>
             <h1>Meet the clinicians behind Mwein Medical</h1>
             <p>
-              Experienced doctors, nurses, and clinical officers partner closely so every patient receives coordinated, compassionate care.
-              We invest in continuous training and telehealth coverage to keep support within reach day and night.
+              Our resident clinical officers and nurses work together under local arrangements so you always meet a familiar face.
+              Every visit is scheduled ahead to match the right clinician with your needs while keeping emergency support ready every minute.
             </p>
             <ul className="text-sm text-slate-600 space-y-2">
-              <li>• Multidisciplinary team with specialists visiting twice monthly</li>
-              <li>• Continuous medical education and mentorship for emerging clinicians</li>
+              <li>• Local clinicians rooted in Busia County communities</li>
+              <li>• Appointment-based scheduling for focused reviews</li>
               <li>• Family planning counselling, insertions, and follow-ups delivered by certified nurses</li>
               <li>• Minute-by-minute emergency coordination across Busia County facilities</li>
             </ul>
