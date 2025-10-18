@@ -1,57 +1,40 @@
 import Link from 'next/link'
 import { buildPageMetadata } from '../../lib/metadata'
+import { serviceLines } from '../../data/serviceLines'
 
-const serviceLinks = [
+const preparationSteps = [
+  'Share your visit reason via the booking form or WhatsApp so we prep the right room and clinician.',
+  'Carry previous summaries, imaging, or clinic cards—our team scans them into your digital chart.',
+  'Arrive 10 minutes early for vitals; fasting labs need water only for 8 hours unless advised otherwise.',
+  'Bring insurance cards or mobile money confirmation. SHA and Yatta are accepted; others are processed with advance notice.'
+]
+
+const quickResources = [
   {
     href: '/services/outpatient',
-    title: 'Outpatient Care',
-    copy: 'Preventive care, chronic disease management, immunizations, and same-day attention where possible.'
-  },
-  {
-    href: '/services/laboratory',
-    title: 'Laboratory',
-    copy: 'Rapid diagnostic tests, full haemogram, antenatal profiles, and wellness screening.'
-  },
-  {
-    href: '/services/ultrasound',
-    title: 'Ultrasound',
-    copy: 'Obstetric, abdominal, and pelvic scans with clear reporting and referrals when needed.'
-  },
-  {
-    href: '/services/antenatal',
-    title: 'Antenatal & Maternal Care',
-    copy: 'Routine ANC visits, counselling, emergency referral coordination, and safe delivery planning.'
-  },
-  {
-    href: '/services/child-wellness',
-    title: 'Child Wellness & Immunizations',
-    copy: 'Growth monitoring, nutrition guidance, and KEPI/Kenya Expanded Programme on Immunization support.'
-  },
-  {
-    href: '/services/chronic-care',
-    title: 'Chronic Care Clinics',
-    copy: 'Hypertension, diabetes, asthma, and sickle cell reviews with medication management and lifestyle coaching.'
-  },
-  {
-    href: '/services/minor-procedures',
-    title: 'Minor Procedures',
-    copy: 'Wound suturing, keloid removal, circumcision, abscess drainage, and related minor surgical care.'
-  },
-  {
-    href: '/services/pharmacy',
-    title: 'Pharmacy',
-    copy: 'Safe dispensing, adherence counselling, and enquiry-only handling for restricted medicines.'
+    label: 'Outpatient visit flow',
+    description: 'Understand check-in, diagnostics, and pharmacy steps before you arrive.'
   },
   {
     href: '/services/telehealth',
-    title: 'Telehealth Consultations',
-    copy: 'Secure video or phone reviews with mobile payment checkout and same-day clinician follow-up notes.'
+    label: 'Telehealth & follow-ups',
+    description: 'Book virtual reviews, medication refills, and home visit coordination.'
   },
+  {
+    href: '/services/minor-procedures',
+    label: 'Minor procedures list',
+    description: 'See day theatre capabilities, preparation tips, and aftercare plans.'
+  },
+  {
+    href: '/cancer-screening',
+    label: 'Cancer screening drive',
+    description: 'Access VIA/VILI, breast exams, and referral support close to home.'
+  }
 ]
 
 export const metadata = buildPageMetadata({
   title: 'Medical services',
-  description: 'Outpatient, diagnostic, maternal, and chronic care services available 24/7 at Mwein Medical Services in Mungatsi.',
+  description: 'Four integrated service lines covering outpatient, maternal, diagnostics, and telehealth support at Mwein Medical Services.',
   path: '/services'
 })
 
@@ -59,116 +42,117 @@ export default function Services() {
   return (
     <>
       <section className="section-spacing rounded-3xl bg-gradient-to-r from-white via-slate-50 to-sky-50 shadow-inset mb-12">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <span className="badge mb-4">Services & Clinics</span>
-            <h1>Complete care for every family member</h1>
-            <p>
-              From preventive screenings to specialist consults, our clinicians coordinate the right care close to home.
-              Walk in any time — we&rsquo;re open <strong>24 hours every day</strong>, or book a slot to skip the queue.
+        <div className="grid gap-12 lg:grid-cols-[1.05fr_0.95fr] items-start">
+          <div className="space-y-5">
+            <span className="badge">Services & clinics</span>
+            <h1 className="max-w-2xl">Care pathways designed to keep treatment under one roof</h1>
+            <p className="text-lg text-slate-600 max-w-3xl">
+              We group every visit into four service lines so appointments are clear, evidence-based, and coordinated. Whether you walk in or schedule, our team triages, investigates, and follows up without repeating steps.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Link href="/contact" className="btn-primary">Book an appointment</Link>
+              <Link href="/contact" className="btn-primary">Plan your visit</Link>
               <a href="tel:+254707711888" className="btn-outline">Call +254 707 711 888</a>
+              <a href="https://wa.me/254707711888" className="btn-outline">WhatsApp triage</a>
             </div>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <div className="contact-tile">
-                <span className="contact-tile-title">Insurance-friendly</span>
-                <p className="contact-tile-meta">SHA & Yatta accepted; our team pre-authorises before your visit.</p>
-              </div>
-              <div className="contact-tile">
-                <span className="contact-tile-title">Full family planning</span>
-                <p className="contact-tile-meta">Implants, IUCDs, injectables, counselling, and follow-ups ready daily.</p>
-              </div>
-              <div className="contact-tile">
-                <span className="contact-tile-title">On-site diagnostics</span>
-                <p className="contact-tile-meta">Laboratory, ultrasound, and pharmacy under one roof.</p>
-              </div>
-              <div className="contact-tile">
-                <span className="contact-tile-title">Emergency coordination</span>
-                <p className="contact-tile-meta">On-call clinicians and partner ambulances every minute.</p>
-              </div>
-            </div>
+            <p className="text-sm text-slate-500 max-w-xl">
+              Insurance ready · 24/7 emergency coverage · Visiting specialists weekly · Telehealth follow-ups after discharge.
+            </p>
           </div>
-          <div>
-            <div className="card space-y-4">
-              <div>
-                <h3>Same-day support</h3>
-                <p className="text-sm text-slate-500">
-                  Our triage nurses escalate urgent cases immediately while our clinicians manage ongoing treatment plans.
-                </p>
+          <div className="card space-y-5">
+            <h3 className="text-lg font-semibold text-slate-900">What to expect during any visit</h3>
+            <ul className="space-y-3 text-sm text-slate-600">
+              <li className="flex items-start gap-3"><span className="mt-1 inline-flex h-5 w-5 flex-none items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">1</span>Reception books you in, checks insurance eligibility, and alerts triage nurses.</li>
+              <li className="flex items-start gap-3"><span className="mt-1 inline-flex h-5 w-5 flex-none items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">2</span>Triage captures vitals while clinicians review your chart and line up diagnostics.</li>
+              <li className="flex items-start gap-3"><span className="mt-1 inline-flex h-5 w-5 flex-none items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">3</span>Diagnostics run in-parallel; results sync to the clinician’s tablet instantly.</li>
+              <li className="flex items-start gap-3"><span className="mt-1 inline-flex h-5 w-5 flex-none items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">4</span>Pharmacy, referrals, and follow-up notes are issued before you leave.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section className="section-spacing">
+        <h2 className="mb-6 text-2xl font-semibold text-slate-900">Explore our four service lines</h2>
+        <div className="grid gap-6 lg:grid-cols-2">
+          {serviceLines.map((line) => (
+            <article key={line.id} className="card h-full space-y-6 border border-slate-100 bg-white shadow-sm transition hover:shadow-lg">
+              <div className="space-y-2">
+                <span className="badge bg-primary/10 text-primary">{line.name}</span>
+                <h3 className="text-lg font-semibold text-slate-900">{line.tagline}</h3>
+                <p className="text-sm text-slate-600">{line.summary}</p>
               </div>
-              <div className="grid grid-cols-2 gap-3 text-sm text-slate-600">
-                <p className="rounded-lg border border-dashed border-slate-200 p-3 bg-white">Walk-in primary care</p>
-                <p className="rounded-lg border border-dashed border-slate-200 p-3 bg-white">Maternal & child health</p>
-                <p className="rounded-lg border border-dashed border-slate-200 p-3 bg-white">Diagnostics on-site</p>
-                <p className="rounded-lg border border-dashed border-slate-200 p-3 bg-white">Telehealth follow-ups</p>
+              <div className="grid gap-4 text-sm text-slate-600 md:grid-cols-2">
+                {line.offerings.map((offering) => (
+                  <div key={offering.title} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+                    <p className="font-semibold text-slate-900">{offering.title}</p>
+                    <p className="mt-2 text-slate-600">{offering.description}</p>
+                  </div>
+                ))}
               </div>
-              <p className="text-xs text-slate-500">Need ambulance transport? Call ahead—we&rsquo;ll coordinate with partner facilities.</p>
+              <ul className="space-y-2 text-sm text-slate-600">
+                {line.highlights.map((highlight) => (
+                  <li key={highlight} className="flex items-start gap-3">
+                    <span className="mt-1 inline-flex h-5 w-5 flex-none items-center justify-center rounded-full bg-primary/5 text-primary text-xs font-semibold">•</span>
+                    <span>{highlight}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex flex-wrap gap-3">
+                <Link href={line.href} className="btn-outline">Dive into {line.name.toLowerCase()}</Link>
+                {line.links.map((link) => (
+                  <Link key={link.href} href={link.href} className="text-sm font-medium text-primary underline underline-offset-4">
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="section-spacing rounded-3xl border border-slate-100 bg-surface p-8 md:p-12">
+        <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] items-start">
+          <div className="space-y-5">
+            <h2 className="text-2xl font-semibold text-slate-900">Prepare once, use everywhere</h2>
+            <p className="text-slate-600">Give us your details one time and every clinician—whether outpatient, maternal, diagnostics, or telehealth—works from the same chart.</p>
+            <ul className="space-y-3 text-sm text-slate-600">
+              {preparationSteps.map((step) => (
+                <li key={step} className="flex items-start gap-3">
+                  <span className="mt-1 inline-flex h-5 w-5 flex-none items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">✓</span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="card space-y-4">
+            <h3 className="text-lg font-semibold text-slate-900">Need to coordinate extra support?</h3>
+            <p className="text-sm text-slate-600">Our admin team lines up partner ambulances, donor-funded fee waivers, or private rooms when needed. Let us know in advance so arrival is stress-free.</p>
+            <div className="rounded-2xl border border-primary/30 bg-primary/5 p-6 text-sm text-slate-700 space-y-3">
+              <p className="font-semibold text-primary">Quick help</p>
+              <p>Email <a className="underline" href="mailto:appointments@mweinmedical.co.ke">appointments@mweinmedical.co.ke</a> or call <a className="underline" href="tel:+254707711888">+254 707 711 888</a> for coordination.</p>
+              <p className="font-semibold text-primary">Need financial aid?</p>
+              <p>Ask about the community fund—eligible families receive donor-supported subsidies for emergency care.</p>
             </div>
           </div>
         </div>
       </section>
 
       <section className="section-spacing">
-        <div className="flex items-center justify-between gap-4 mb-8">
-          <div>
-            <h2 className="mb-2">Browse services by department</h2>
-            <p className="text-slate-600 max-w-2xl">Tap a service to see hours, clinicians, protocols, and preparation tips before your visit.</p>
-          </div>
-          <Link href="/shop" className="btn-outline">Shop clinic essentials</Link>
-        </div>
-        <div className="grid md:grid-cols-2 gap-6">
-          {serviceLinks.map(service => (
-            <Link key={service.href} href={service.href} className="card block group focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3 className="mb-2">{service.title}</h3>
-                  <p>{service.copy}</p>
-                </div>
-                <span className="text-primary-light font-semibold group-hover:text-primary">→</span>
-              </div>
+        <h2 className="mb-6 text-2xl font-semibold text-slate-900">Popular resources</h2>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {quickResources.map((resource) => (
+            <Link key={resource.href} href={resource.href} className="card block h-full space-y-3 border border-slate-100 bg-white shadow-sm transition hover:shadow-lg">
+              <h3 className="text-base font-semibold text-slate-900">{resource.label}</h3>
+              <p className="text-sm text-slate-600">{resource.description}</p>
+              <span className="text-sm font-semibold text-primary">View details →</span>
             </Link>
           ))}
-        </div>
-      </section>
-
-      <section className="section-spacing bg-surface rounded-3xl border border-slate-100 p-8 md:p-12 mb-12">
-        <div className="grid md:grid-cols-3 gap-8">
-          <div className="space-y-3">
-            <h3>Diagnostics & monitoring</h3>
-            <p className="text-slate-600">Full haemogram, malaria, HIV, antenatal, chemistry panels, ECGs, and ultrasound services on-site.</p>
-            <ul className="text-sm text-slate-500 space-y-2">
-              <li>• Results ready in minutes for rapid tests</li>
-              <li>• Electronic reports shared securely on request</li>
-              <li>• Partner labs engaged for specialized panels</li>
-            </ul>
-          </div>
-          <div className="space-y-3">
-            <h3>Maternal & child health</h3>
-            <p className="text-slate-600">Experienced midwives and paediatric clinicians guide ANC journeys, newborn reviews, and immunization schedules.</p>
-            <ul className="text-sm text-slate-500 space-y-2">
-              <li>• Focus on respectful maternity care</li>
-              <li>• Emergency referral pathways to Busia County Hospital</li>
-              <li>• Nutrition, breastfeeding, and family planning support</li>
-            </ul>
-          </div>
-          <div className="space-y-3">
-            <h3>Chronic & urgent care</h3>
-            <p className="text-slate-600">Regular specialist-run clinics and after-hours coverage ensure continuity for chronic and urgent needs.</p>
-            <ul className="text-sm text-slate-500 space-y-2">
-              <li>• Hypertension, diabetes, epilepsy, and sickle cell reviews</li>
-              <li>• 24/7 on-call clinician for emergencies</li>
-              <li>• Home visits available on arrangement</li>
-            </ul>
-          </div>
         </div>
       </section>
 
       <section className="section-spacing text-center bg-gradient-to-r from-primary to-primary-dark text-white rounded-3xl shadow-hover">
         <h2 className="mb-4 text-white">Ready to visit Mwein Medical?</h2>
         <p className="max-w-2xl mx-auto mb-6 text-slate-100">
-          Call ahead or send your details online—we&rsquo;ll confirm appointment time, preparation steps, and insurance cover before you arrive.
+          Call ahead or send your details online—we’ll confirm appointment time, preparation steps, and insurance cover before you arrive.
         </p>
         <div className="flex flex-wrap justify-center gap-3">
           <Link href="/contact" className="btn-primary">Book online</Link>
