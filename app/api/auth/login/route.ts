@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 
-import { ADMIN_SESSION_COOKIE, DEFAULT_SESSION_TTL, createAdminSessionToken } from '../../../../lib/auth'
+import { ADMIN_SESSION_COOKIE, DEFAULT_SESSION_TTL, createAdminSessionToken, normaliseAdminRole } from '../../../../lib/auth'
 import { prisma } from '../../../../lib/prisma'
 
 export async function POST(request: Request) {
@@ -24,10 +24,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'unauthorised' }, { status: 401 })
     }
 
+    const role = normaliseAdminRole(user.role)
+
     const token = createAdminSessionToken({
       userId: user.id,
       email: user.email,
-      role: user.role
+      role
     })
 
     const response = NextResponse.json({
@@ -35,7 +37,7 @@ export async function POST(request: Request) {
       user: {
         id: user.id,
         email: user.email,
-        role: user.role
+        role
       },
       expiresIn: DEFAULT_SESSION_TTL
     })

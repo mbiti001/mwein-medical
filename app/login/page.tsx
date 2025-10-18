@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, FormEvent } from 'react'
+import { Suspense, useState, FormEvent } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function LoginPage() {
+function LoginPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirect') || '/dashboard'
@@ -91,5 +91,19 @@ export default function LoginPage() {
         </form>
       </div>
     </section>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={(
+        <section className="min-h-screen flex items-center justify-center bg-slate-900">
+          <p className="text-slate-200">Loading login form…</p>
+        </section>
+      )}
+    >
+      <LoginPageInner />
+    </Suspense>
   )
 }

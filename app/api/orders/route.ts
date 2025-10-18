@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import { prisma } from '../../../lib/prisma'
 import { ADMIN_SESSION_COOKIE, verifyAdminSessionToken } from '../../../lib/auth'
 import { ORDER_STATUS_OPTIONS, parseOrderItems } from '../../../lib/orders'
+import { buildNotificationInputFromOrder, createOrderItemsFromPayload, notifyOrderSubmission } from '../../../lib/orderNotifications'
 
 const orderItemSchema = z.object({
   id: z.string().min(1),
@@ -61,6 +62,20 @@ export async function POST(request: Request) {
         statusChangedAt: new Date()
       }
     })
+
+    const notificationItems = createOrderItemsFromPayload(payload.items)
+    const notificationInput = buildNotificationInputFromOrder(order)
+
+    void (async () => {
+      try {
+        const result = await notifyOrderSubmission(notificationInput, notificationItems)
+        if (result.emailResult.status === 'skipped') {
+          console.log('Order notification skipped', { reference: order.reference, reason: result.emailResult.reason })
+        }
+      } catch (error) {
+        console.error('Failed to process order notification', error)
+      }
+    })()
 
     return NextResponse.json({ ok: true, reference: order.reference })
   } catch (error) {

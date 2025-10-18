@@ -72,6 +72,81 @@ const preparationTips = [
   'Children should come with their caregiver or consent note for treatment.'
 ]
 
+const procedureCategories = [
+  {
+    title: 'Stabilisation & urgent care',
+    items: [
+      'Rapid triage for chest pain, stroke alerts, severe asthma, and obstetric red flags.',
+      'IV cannulation, fluid resuscitation, electrolyte correction, and emergency medication administration.',
+      'Oxygen therapy, nebulised bronchodilators, and peak-flow monitoring for respiratory distress.',
+      '12-lead ECG capture with clinician interpretation prior to referral or admission.'
+    ]
+  },
+  {
+    title: 'Minor procedures & wound care',
+    items: [
+      'Suturing of lacerations, wound debridement, and advanced dressing changes.',
+      'Abscess incision and drainage with follow-up packings and culture sampling when required.',
+      'Foreign body removal for ears, throat, eyes, and soft tissue under local anaesthesia.',
+      'Burn management, keloid injections, and chronic ulcer care with negative-pressure dressing set-up.'
+    ]
+  },
+  {
+    title: 'Maternal & reproductive health',
+    items: [
+      'Antenatal profiles, foetal heart monitoring, and bedside obstetric ultrasound.',
+      'Family planning services including implants, IUCD insertion/removal, and injectable contraception.',
+      'Cervical cancer screening (VIA/VILI) with cryotherapy or referral pathways.',
+      'Pap smear collection, HPV sampling, and infertility counselling investigations.'
+    ]
+  },
+  {
+    title: 'Diagnostics & chronic care support',
+    items: [
+      'Point-of-care tests: malaria, HIV, pregnancy, HbA1c, lipid profile, kidney and liver panels.',
+      'Ultrasound (abdominal, pelvic, obstetric), X-ray referrals, and ECG monitoring.',
+      'Spirometry, pulse oximetry, and peak-flow measurements for respiratory follow-up.',
+      'Medication therapy management clinics for hypertension, diabetes, asthma, and epilepsy.'
+    ]
+  }
+]
+
+const medicationCategories = [
+  {
+    title: 'Cardiometabolic management',
+    items: [
+      'Antihypertensives: amlodipine, losartan, hydrochlorothiazide, and combination therapies.',
+      'Antidiabetic agents: metformin, gliclazide, insulin (basal and short-acting), and DPP4 inhibitors.',
+      'Lipid control and antiplatelets: statins, aspirin, and clopidogrel for secondary prevention.'
+    ]
+  },
+  {
+    title: 'Infectious disease coverage',
+    items: [
+      'Antimalarials: artemether-lumefantrine, artesunate injections, and quinine for severe cases.',
+      'Broad-spectrum antibiotics including amoxicillin-clavulanate, ceftriaxone, azithromycin, and doxycycline.',
+      'Antiviral and antifungal staples for common outpatient presentations (acyclovir, fluconazole).'
+    ]
+  },
+  {
+    title: 'Respiratory & emergency relief',
+    items: [
+      'Nebulised salbutamol and ipratropium, inhaled corticosteroids, and oral leukotriene modifiers.',
+      'Emergency pack: adrenaline, hydrocortisone, promethazine, and antihistamines for anaphylaxis.',
+      'Cough, cold, and expectorant therapies plus nicotine replacement for cessation support.'
+    ]
+  },
+  {
+    title: 'Women’s and paediatric health',
+    items: [
+      'Prenatal vitamins, iron/folate supplements, calcium, and haematinics.',
+      'Contraceptives: combined oral pills, progestin-only pills, emergency contraception, and depot injections.',
+      'Paediatric formulations: ORS + zinc, paracetamol/ibuprofen suspensions, deworming agents, and antibiotics.',
+      'Vaccines and Vitamin A for catch-up schedules in collaboration with public health programmes.'
+    ]
+  }
+]
+
 export const metadata = buildPageMetadata({
   title: 'Outpatient visits',
   description: 'Primary care, chronic clinics, maternal health, screenings, and diagnostics available 24/7 at Mwein Medical Services.',
@@ -146,6 +221,54 @@ export default function OutpatientCare() {
               <p className="text-sm text-slate-600">{option.description}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="section-spacing rounded-3xl border border-slate-100 bg-white p-8 md:p-12">
+        <div className="grid gap-12 lg:grid-cols-[1.15fr_0.85fr] items-start">
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <h2>Procedures performed in outpatient care</h2>
+              <p className="text-slate-600">Our clinicians combine emergency readiness with family-centred follow-up. Here’s what is handled on-site before we consider a referral.</p>
+            </div>
+            <div className="space-y-5">
+              {procedureCategories.map(category => (
+                <div key={category.title} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6">
+                  <h3 className="text-base font-semibold text-slate-900">{category.title}</h3>
+                  <ul className="mt-3 space-y-2 text-sm text-slate-600">
+                    {category.items.map(item => (
+                      <li key={item} className="flex items-start gap-3">
+                        <span className="mt-1 inline-flex h-5 w-5 flex-none items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">•</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-slate-900">Pharmacy formulary at a glance</h3>
+              <p className="text-sm text-slate-600">The outpatient pharmacy stocks evidence-based medication for acute relief and chronic maintenance so patients leave with everything they need.</p>
+            </div>
+            <div className="space-y-5">
+              {medicationCategories.map(category => (
+                <div key={category.title} className="rounded-2xl border border-primary/20 bg-primary/5 p-6">
+                  <h4 className="text-base font-semibold text-primary-dark">{category.title}</h4>
+                  <ul className="mt-3 space-y-2 text-sm text-primary-dark/80">
+                    {category.items.map(item => (
+                      <li key={item} className="flex items-start gap-3">
+                        <span className="mt-1 inline-flex h-5 w-5 flex-none items-center justify-center rounded-full bg-white/60 text-primary text-xs font-semibold">•</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-slate-500">Cold-chain vaccines and specialty drugs are coordinated with partner depots—ask reception for availability before travelling.</p>
+          </div>
         </div>
       </section>
 

@@ -12,10 +12,10 @@ export type Product = {
 export const products: Product[] = [
   {
     id: 'p1',
-    slug: 'paracetamol-500mg',
-    name: 'Paracetamol 500mg (Pack)',
-    description: 'Pain relief and fever reducer. OTC.' ,
-    price: 120,
+    slug: 'deep-heat-spray',
+    name: 'Deep Heat Spray 150ml',
+    description: 'Fast-acting menthol spray for muscle relief and sports injuries.',
+    price: 900,
     restriction: 'UNRESTRICTED',
   },
   {
@@ -39,6 +39,14 @@ export const products: Product[] = [
     name: 'Glucometer Test Strips (Pack)',
     description: 'Test strips for glucose monitoring (OTC).',
     price: 800,
+    restriction: 'UNRESTRICTED',
+  },
+  {
+    id: 'p5',
+    slug: 'zkteco-fingerprint-scanner',
+    name: 'ZKTeco Fingerprint Scanner Bundle',
+    description: 'Includes biometric scanner, parcel delivery, and on-call tech support for setup.',
+    price: 9000,
     restriction: 'UNRESTRICTED',
   }
 ]

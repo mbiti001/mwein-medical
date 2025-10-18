@@ -49,46 +49,64 @@ model SiteMetric {
 }
 
 model DonationSupporter {
-  id                 String    @id @default(uuid())
-  firstName          String
-  normalizedName     String    @unique
-  totalAmount        Int       @default(0)
-  donationCount      Int       @default(0)
-  lastChannel        String?
-  lastContributionAt DateTime?
-  publicAcknowledgement Boolean @default(false)
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  id                    String    @id @default(uuid())
+  firstName             String
+  normalizedName        String    @unique
+  totalAmount           Int       @default(0)
+  donationCount         Int       @default(0)
+  lastChannel           String?
+  lastContributionAt    DateTime?
+  publicAcknowledgement Boolean   @default(false)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   @@index([donationCount, totalAmount])
 }
 
 model ShopOrder {
-  id              String   @id @default(uuid())
-  reference       String   @unique
+  id              String    @id @default(uuid())
+  reference       String    @unique
   customerName    String
   phone           String
   contactChannel  String?
   itemsJson       String
   totalAmount     Int
   notes           String?
-  status          String   @default("PENDING")
+  status          String    @default("PENDING")
   statusChangedAt DateTime?
   handledBy       String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  notifications OrderNotification[]
 
   @@index([status, createdAt])
   @@index([reference])
 }
 
 model AdminUser {
-  id           String    @id @default(uuid())
-  email        String    @unique
+  id           String   @id @default(uuid())
+  email        String   @unique
   passwordHash String
-  role         String    @default("PHARMACY")
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  role         String   @default("PHARMACY")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([role, createdAt])
+}
+
+model OrderNotification {
+  id           String    @id @default(uuid())
+  orderId      String
+  order        ShopOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  channel      String    @default("EMAIL")
+  status       String    @default("SENT")
+  recipient    String?
+  summary      String
+  metadataJson String?
+  deliveredAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([orderId, createdAt])
+  @@index([channel, createdAt])
 }

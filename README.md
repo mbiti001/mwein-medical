@@ -1,24 +1,11 @@
 # Mwein Medical Services site
 
-Next.js 14 + TypeScript + Tailwind project powering the Mwein Medical Services marketing site, appointment request form, and storefront prototype. The clinic operates 24 hours a day, seven days a week, so the copy throughout the site reflects round-the-clock access.
-
-## Quick start
-
-```bash
-npm install
-npm run dev
-```
-
-Visit http://localhost:3000 to browse the site.
-
-Key routes to explore during QA:
-
-- `/services` — department directory with deep links into outpatient, maternal, laboratory, and chronic care clinics.
-- `/services/outpatient` — newly added outpatient hub summarising visit flow, preparation tips, and booking options.
-
-## Environment configuration
-
-1. Copy the template and fill in your secrets:
+		- name: Trigger Vercel deployment
+			if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+			env:
+				VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+			run: |
+				curl -X POST "$VERCEL_DEPLOY_HOOK_URL"
 
 	 ```bash
 	 cp .env.example .env.local
@@ -99,10 +86,38 @@ When SMTP is configured you should receive an email at `CONTACT_EMAIL`; otherwis
 - Orders submitted through the shop appear in **Dashboard → Orders** where you can update status, add staff notes, and track fulfilment history. Telehealth submissions remain accessible via the dedicated telehealth dashboard.
 - Admin sessions expire after six hours; signing out clears the cookie immediately.
 
+## Order notifications
+
+- Every shop order triggers `lib/orderNotifications.ts`, which sends an email (when SMTP is configured) and stores the outcome in the `OrderNotification` table via Prisma.
+- The `/api/orders/notifications` route exposes the 12 most recent alerts to the dashboard, and `/dashboard/orders` now includes a quick view of the latest alert per order.
+- If SMTP details are missing, notifications are recorded with status `SKIPPED`; failures are logged with status `ERROR`, so the dashboard still shows a full audit trail.
+- Ensure the email environment variables from [Environment configuration](#environment-configuration) are set in production so alerts deliver to the pharmacy team.
+
+## Donation experience highlights
+
+- `components/DonationRail.tsx` renders a right-to-left ticker showcasing recent supporters. Pass it an array of `{ id, who, amount, message, time }` entries; the component will duplicate cars automatically so the loop never stutters.
+- The ticker is embedded in `DonateExperience` alongside live supporter stats. Public supporters pulled from `/api/donations/supporters` are transformed into rail items, and the list refreshes every minute so new gifts appear without a manual reload.
+- To reuse the rail elsewhere, import the component and feed it the supporters you want to highlight:
+
+	```tsx
+	import DonationRail from '@/components/DonationRail'
+
+	const supporters = [
+	  { id: '1', who: 'Grace K.', amount: 'KES 2,500', message: 'Maternal health fund', time: '5m ago' }
+	]
+
+	export function HeroRail() {
+	  return <DonationRail items={supporters} durationSec={50} heightPx={80} />
+	}
+	```
+
+The component ships with its own scoped styles, so no Tailwind configuration changes are required.
+
 ## Tooling
 
 - Pages live under `/app` using the App Router.
 - Styling is handled with Tailwind (`tailwind.config.js`, `styles/globals.css`).
+- Dynamic favicons are generated via `app/icon.tsx` and `app/apple-icon.tsx`, so no manual `.ico` assets are required.
 - `npm run lint` runs ESLint with the Next.js ruleset; keep it clean before deploying.
 - `npm run test` executes the Vitest unit suite, covering the contact spam-protection helpers and persistence path for the contact API.
 - `npm run test:coverage` generates text and LCOV coverage reports via V8.
@@ -157,7 +172,7 @@ Vitest powers the unit tests that cover the honeypot and rate-limiter utilities 
 npm run test
 ```
 
-Add `--run` to execute once in CI or use `npm run test:coverage` to emit LCOV output for reporting tools such as Codecov.
+Add `--run` to execute once in CI or use `npm run test:coverage` to emit LCOV output for reporting tools such as Codecov. Additional suites exercise email delivery helpers and the order-notification pipeline so dashboard alerts stay reliable.
 
 ## Deployment
 
@@ -194,6 +209,8 @@ Expose port `3000` (reverse proxy with Nginx/Traefik if desired) and set environ
 Before promoting a build to production, run the fast quality gates locally:
 
 ```bash
+npm run check
+# or run individually
 npm run lint
 npm run test -- --run
 npm run build

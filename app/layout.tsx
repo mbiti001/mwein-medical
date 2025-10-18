@@ -30,9 +30,9 @@ export const metadata: Metadata = {
     'Mungatsi clinic'
   ],
   icons: {
-    icon: '/favicon.svg',
-    shortcut: '/favicon.svg',
-    apple: '/favicon.svg'
+    icon: ['/favicon.svg', { url: '/icon.png', type: 'image/png' }],
+    shortcut: ['/favicon.svg', '/icon.png'],
+    apple: [{ url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }]
   },
   openGraph: {
     type: 'website',

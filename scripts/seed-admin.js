@@ -21,7 +21,9 @@ async function main() {
   }
 
   const email = emailRaw.trim().toLowerCase()
-  const role = VALID_ROLES.includes(roleRaw) ? roleRaw : 'ADMIN'
+  const role = VALID_ROLES.includes(roleRaw)
+    ? roleRaw
+    : (console.warn(`⚠️  ADMIN_SEED_ROLE "${roleRaw}" is not recognised. Falling back to ADMIN. Accepted values: ${VALID_ROLES.join(', ')}.`), 'ADMIN')
 
   const passwordHash = await bcrypt.hash(password, 12)
 

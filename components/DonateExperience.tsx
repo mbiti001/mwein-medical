@@ -3,6 +3,7 @@
 import { FormEvent, KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Check, Copy, Gift, HeartHandshake, PartyPopper } from 'lucide-react'
+import DonationRail, { type DonationItem as DonationRailItem } from './DonationRail'
 import { triggerDonationCelebration } from './DonationCelebration'
 
 const MPESA_TILL = '8121096'
@@ -67,9 +68,31 @@ const shortDateFormatter = new Intl.DateTimeFormat('en-KE', {
 const paceFormatter = new Intl.NumberFormat('en-KE', {
   maximumFractionDigits: 1
 })
+const longDateFormatter = new Intl.DateTimeFormat('en-KE', {
+  dateStyle: 'medium'
+})
 
 const formatAmount = (amount: number) => currencyFormatter.format(Math.round(amount))
 const formatTrendDate = (date: string) => shortDateFormatter.format(new Date(`${date}T00:00:00Z`))
+const formatRelativeTimeLabel = (isoString: string | null) => {
+  if (!isoString) return null
+  const parsed = new Date(isoString)
+  if (Number.isNaN(parsed.getTime())) return null
+
+  const diffMs = Date.now() - parsed.getTime()
+  const diffMinutes = Math.round(diffMs / 60000)
+
+  if (diffMinutes < 1) return 'just now'
+  if (diffMinutes < 60) return `${diffMinutes}m ago`
+
+  const diffHours = Math.round(diffMinutes / 60)
+  if (diffHours < 24) return `${diffHours}h ago`
+
+  const diffDays = Math.round(diffHours / 24)
+  if (diffDays < 7) return `${diffDays}d ago`
+
+  return longDateFormatter.format(parsed)
+}
 
 export default function DonateExperience() {
   const [copied, setCopied] = useState(false)
@@ -183,6 +206,20 @@ export default function DonateExperience() {
   }, [loadSupporters])
 
   useEffect(() => {
+    const interval = setInterval(() => {
+      loadSupporters(undefined, true).catch(error => {
+        if ((error as Error).name !== 'AbortError') {
+          console.error('Failed to refresh supporters', error)
+        }
+      })
+    }, 60000)
+
+    return () => {
+      clearInterval(interval)
+    }
+  }, [loadSupporters])
+
+  useEffect(() => {
     return () => {
       if (ackTimeoutRef.current) {
         clearTimeout(ackTimeoutRef.current)
@@ -192,6 +229,31 @@ export default function DonateExperience() {
 
   const publicSupporters = useMemo(() => supporters.filter(entry => entry.publicAcknowledgement), [supporters])
   const latestPublic = useMemo(() => publicSupporters.slice(0, 6), [publicSupporters])
+  const donationRailItems = useMemo<DonationRailItem[]>(() => {
+    if (publicSupporters.length === 0) {
+      return []
+    }
+
+    return publicSupporters.slice(0, 24).map(entry => {
+      const messageParts: string[] = []
+      if (entry.lastChannel) {
+        messageParts.push(entry.lastChannel)
+      }
+      if (entry.donationCount > 1) {
+        messageParts.push(`${entry.donationCount} gifts logged`)
+      }
+
+      const timeLabel = formatRelativeTimeLabel(entry.lastContributionAt)
+
+      return {
+        id: entry.id,
+        who: entry.firstName,
+        amount: formatAmount(entry.totalAmount),
+        message: messageParts.length > 0 ? messageParts.join(' • ') : undefined,
+        time: timeLabel ?? undefined
+      }
+    })
+  }, [publicSupporters])
   const trendInsights = useMemo(() => {
     if (supporterTrend.length === 0) {
       return null
@@ -580,6 +642,13 @@ export default function DonateExperience() {
           </div>
         </div>
       </div>
+
+      <DonationRail
+        items={donationRailItems}
+        durationSec={48}
+        heightPx={78}
+        className="rounded-3xl border border-primary/20 shadow-lg"
+      />
 
       <div className="card border-primary/40 bg-white/80 shadow-lg">
         {trendInsights && trendStats ? (
