@@ -13,6 +13,8 @@
 
 	Update `SMTP_*`, `CONTACT_EMAIL`, and `ADMIN_SESSION_SECRET` alongside `DATABASE_URL` as needed. Leaving the email values blank will fall back to console logging so you can still submit the form locally, but you must seed at least one admin account before you can access the dashboard.
 
+	If you would like the mental health assistant to produce personalised supportive messages, add `OPENAI_API_KEY` (and optionally `OPENAI_MODEL`) to your environment. Without these, the assistant still runs locally with reassuring defaults and never stores PHQ-9 responses.
+
 2. If you stay on the bundled SQLite database, nothing else is required—`lib/prisma.ts` points to `file:./prisma/dev.db` by default when `DATABASE_URL` is missing.
 
 3. To use PostgreSQL (or another provider) instead:
@@ -92,6 +94,14 @@ When SMTP is configured you should receive an email at `CONTACT_EMAIL`; otherwis
 - The `/api/orders/notifications` route exposes the 12 most recent alerts to the dashboard, and `/dashboard/orders` now includes a quick view of the latest alert per order.
 - If SMTP details are missing, notifications are recorded with status `SKIPPED`; failures are logged with status `ERROR`, so the dashboard still shows a full audit trail.
 - Ensure the email environment variables from [Environment configuration](#environment-configuration) are set in production so alerts deliver to the pharmacy team.
+
+## Mental health check-in assistant
+
+- `/mental-health` provides a compassionate, privacy-first PHQ-9 check-in. Responses remain in the browser and are never stored on the server.
+- The assistant offers tailored guidance, immediate safety messaging (Kenya emergency numbers 999 / 1199), and directs positive screens to telehealth or walk-in care.
+- Optional integration with OpenAI is available by setting `OPENAI_API_KEY`. When absent, the assistant falls back to curated supportive copy so the workflow continues to function offline.
+- The API proxy (`/api/mental-health/support`) only sends aggregate scoring data to OpenAI and strips identifiers to support compliance with data-protection expectations.
+- Aggregate analytics for the check-in are captured via `/api/mental-health/analytics`, which increments `SiteMetric` totals for starts, completions, severity bands, positive screens, harm alerts, and care CTA clicks without recording any individual responses.
 
 ## Donation experience highlights
 
