@@ -18,26 +18,31 @@ Key routes to explore during QA:
 
 ## Environment configuration
 
-Create a `.env.local` file to enable email delivery from the appointment form:
+1. Copy the template and fill in your secrets:
 
-```bash
-SMTP_HOST=smtp.your-provider.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=account@example.com
-SMTP_PASS=your-password
-# SQLite dev database (creates prisma/dev.db next to the schema)
-DATABASE_URL="file:./prisma/dev.db"
-# Optional overrides
-SMTP_FROM="Mwein Medical <no-reply@mweinmedical.co.ke>"
-CONTACT_EMAIL=appointments@mweinmedical.co.ke
-# Used by the sitemap/robots metadata helpers
-NEXT_PUBLIC_SITE_URL=https://preview.mweinmedical.co.ke
-# Or, if you prefer to keep the value server-side only
-# SITE_URL=https://preview.mweinmedical.co.ke
-```
+	 ```bash
+	 cp .env.example .env.local
+	 ```
 
-If SMTP credentials are omitted the API logs submissions to the server console so the frontend flow remains functional during development.
+	Update `SMTP_*`, `CONTACT_EMAIL`, and `ADMIN_SESSION_SECRET` alongside `DATABASE_URL` as needed. Leaving the email values blank will fall back to console logging so you can still submit the form locally, but you must seed at least one admin account before you can access the dashboard.
+
+2. If you stay on the bundled SQLite database, nothing else is required—`lib/prisma.ts` points to `file:./prisma/dev.db` by default when `DATABASE_URL` is missing.
+
+3. To use PostgreSQL (or another provider) instead:
+	 - Update `DATABASE_URL` in `.env.local`, for example
+
+		 ```bash
+		 DATABASE_URL="postgresql://user:password@host:5432/mwein_medical?schema=public"
+		 ```
+
+	 - Edit `prisma/schema.prisma` and change the datasource provider to match (`provider = "postgresql"`).
+	 - Apply migrations against the new database:
+
+		 ```bash
+		 npx prisma migrate deploy
+		 ```
+
+	 - Redeploy the Next.js app with the new environment variables so the API routes connect to the managed database.
 
 Setting either `NEXT_PUBLIC_SITE_URL` or `SITE_URL` ensures the dynamic sitemap, robots.txt route, and canonical metadata reference the correct deployment domain. Values are normalised (protocol + no trailing slash) and default to `https://mweinmedical.co.ke` if unset.
 
@@ -83,6 +88,17 @@ curl -X POST http://localhost:3000/api/contact \
 
 When SMTP is configured you should receive an email at `CONTACT_EMAIL`; otherwise the payload is logged to the terminal running `npm run dev`.
 
+## Dashboard & admin access
+
+- Set `ADMIN_SESSION_SECRET` in `.env.local` and run `npm run seed:admin` to create at least one user (see [Environment configuration](#environment-configuration) for details).
+- Visit `/login` and sign in with the seeded email/password to unlock the protected dashboard routes (`/dashboard`, `/dashboard/orders`, `/dashboard/telehealth`).
+- Roles control which modules appear in the navigation:
+	- `ADMIN` sees everything.
+	- `PHARMACY` can manage orders.
+	- `CLINIC` can review telehealth submissions.
+- Orders submitted through the shop appear in **Dashboard → Orders** where you can update status, add staff notes, and track fulfilment history. Telehealth submissions remain accessible via the dedicated telehealth dashboard.
+- Admin sessions expire after six hours; signing out clears the cookie immediately.
+
 ## Tooling
 
 - Pages live under `/app` using the App Router.
@@ -115,11 +131,22 @@ If you host on Vercel (or another CI-triggered platform) you have two easy optio
 			- name: Trigger Vercel deployment
 				if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 				env:
-					VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
-				run: |
-					curl -X POST "$VERCEL_DEPLOY_HOOK_URL"
-```
+	Update `SMTP_*`, `CONTACT_EMAIL`, and `ADMIN_SESSION_SECRET` alongside `DATABASE_URL` as needed. Leaving the email values blank will fall back to console logging so you can still submit the form locally, but you must seed at least one admin account before you can access the dashboard.
 
+2. Seed an admin user (one-time per environment) so the dashboard login works:
+
+	```bash
+	ADMIN_SEED_EMAIL=admin@example.com \
+	ADMIN_SEED_PASSWORD=super-secure-password \
+	ADMIN_SEED_ROLE=ADMIN \
+	npm run seed:admin
+	```
+
+	The role defaults to `ADMIN` if omitted. Accepted values are `ADMIN`, `PHARMACY`, and `CLINIC`. Remove the plaintext seed variables from your shell after the account is created—the password is hashed in the database.
+				run: |
+3. If you stay on the bundled SQLite database, nothing else is required—`lib/prisma.ts` points to `file:./prisma/dev.db` by default when `DATABASE_URL` is missing.
+```
+4. To use PostgreSQL (or another provider) instead:
 Feel free to extend the workflow with build checks (`npm run build`), preview comment bots, or integration test jobs as the project grows.
 
 ## Testing

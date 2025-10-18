@@ -62,3 +62,33 @@ model DonationSupporter {
 
   @@index([donationCount, totalAmount])
 }
+
+model ShopOrder {
+  id              String   @id @default(uuid())
+  reference       String   @unique
+  customerName    String
+  phone           String
+  contactChannel  String?
+  itemsJson       String
+  totalAmount     Int
+  notes           String?
+  status          String   @default("PENDING")
+  statusChangedAt DateTime?
+  handledBy       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([reference])
+}
+
+model AdminUser {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  role         String    @default("PHARMACY")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([role, createdAt])
+}

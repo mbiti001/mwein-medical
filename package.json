@@ -8,11 +8,13 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "seed:admin": "node scripts/seed-admin.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^5.19.0",
+    "bcryptjs": "^2.4.3",
     "dotenv": "^17.2.3",
     "lucide-react": "^0.546.0",
     "next": "^14.0.0",

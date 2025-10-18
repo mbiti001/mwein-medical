@@ -29,6 +29,11 @@ export const metadata: Metadata = {
     '24 hour medical services',
     'Mungatsi clinic'
   ],
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg'
+  },
   openGraph: {
     type: 'website',
     url: siteUrl,

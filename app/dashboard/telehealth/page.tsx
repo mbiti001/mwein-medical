@@ -1,5 +1,9 @@
+import { redirect } from 'next/navigation'
+
 import { buildPageMetadata } from '../../../lib/metadata'
 import { prisma } from '../../../lib/prisma'
+import { getAuthenticatedAdmin, hasRequiredRole } from '../../../lib/authServer'
+import type { AdminRole } from '../../../lib/auth'
 
 export const metadata = buildPageMetadata({
   title: 'Telehealth consultation log',
@@ -81,6 +85,14 @@ async function getTelehealthAppointments() {
 }
 
 export default async function TelehealthDashboard() {
+  const admin = await getAuthenticatedAdmin()
+
+  const allowedRoles: AdminRole[] = ['ADMIN', 'CLINIC']
+
+  if (!admin || !hasRequiredRole(admin, allowedRoles)) {
+    redirect('/dashboard')
+  }
+
   const { total, averageAge, genderBreakdown, records } = await getTelehealthAppointments()
 
   const genderEntries = Object.entries(genderBreakdown)
