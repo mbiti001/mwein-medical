@@ -2,10 +2,25 @@ import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 
 import { ADMIN_SESSION_COOKIE, DEFAULT_SESSION_TTL, createAdminSessionToken, normaliseAdminRole } from '../../../../lib/auth'
+import { env } from '../../../../lib/env'
 import { prisma } from '../../../../lib/prisma'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
+const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build'
 
 export async function POST(request: Request) {
   try {
+    if (isBuildPhase) {
+      return NextResponse.json({ ok: true, skipped: 'build-phase' })
+    }
+
+    if (!env.adminSessionSecret) {
+      console.error('Admin login blocked: ADMIN_SESSION_SECRET is missing')
+      return NextResponse.json({ error: 'server-misconfigured' }, { status: 500 })
+    }
+
     const body = await request.json().catch(() => null) as { email?: string; password?: string } | null
 
     if (!body || typeof body.email !== 'string' || typeof body.password !== 'string') {

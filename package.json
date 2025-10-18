@@ -4,13 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "seed:admin": "node scripts/seed-admin.js",
-    "check": "npm run lint && npm run test -- --run && npm run build"
+    "check": "npm run lint && npm run test -- --run && npm run build",
+    "postinstall": "prisma generate",
+    "prisma:migrate:deploy": "prisma migrate deploy"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

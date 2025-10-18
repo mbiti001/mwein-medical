@@ -1,14 +1,20 @@
 import { PrismaClient } from '@prisma/client'
 
+import { env } from './env'
+
 declare global {
 	// eslint-disable-next-line no-var
 	var prisma: PrismaClient | undefined
 }
 
-const datasourceUrl = process.env.DATABASE_URL ?? 'file:./prisma/dev.db'
+const datasourceUrl = env.databaseUrl
 
 if (!process.env.DATABASE_URL) {
 	process.env.DATABASE_URL = datasourceUrl
+}
+
+if (!process.env.DATABASE_PROVIDER) {
+	process.env.DATABASE_PROVIDER = env.databaseProvider
 }
 
 export const prisma =

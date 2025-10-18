@@ -181,8 +181,15 @@ Add `--run` to execute once in CI or use `npm run test:coverage` to emit LCOV ou
 1. Commit and push this repository to GitHub (or import directly on Vercel).
 2. In the Vercel dashboard choose **New Project → Import Repository** and select this repo.
 3. Accept the default Next.js build settings (build command `npm run build`, output `.next`).
-4. Add the environment variables from the [Environment configuration](#environment-configuration) section under **Settings → Environment Variables**.
-5. Click **Deploy**. Vercel will handle SSL, CDN, and automatic previews for pull requests.
+4. Add the environment variables from the [Environment configuration](#environment-configuration) section under **Settings → Environment Variables**. At minimum set `ADMIN_SESSION_SECRET`, `NEXT_PUBLIC_SITE_URL`, and a production `DATABASE_URL` (PostgreSQL recommended). Keep a matching `DATABASE_PROVIDER` note alongside your secrets so teammates know which Prisma provider the deployment expects.
+5. After the first build, run database migrations against the production database:
+
+    ```bash
+    # run locally with production DATABASE_URL or via Vercel "Run Command"
+    npx prisma migrate deploy
+    ```
+
+6. Click **Deploy**. Vercel will handle SSL, CDN, and automatic previews for pull requests. You can confirm configuration by hitting `/api/health` once the deployment is live—`dbConfigured: true` indicates Prisma can reach the database.
 
 #### Fallback domain options
 
