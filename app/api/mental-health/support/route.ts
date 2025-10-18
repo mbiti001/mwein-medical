@@ -8,11 +8,11 @@ export const dynamic = 'force-dynamic'
 const DEFAULT_MODEL = process.env.OPENAI_MODEL ?? 'gpt-4o-mini'
 
 const FALLBACK_MESSAGES: Record<Phq9Severity, string> = {
-	minimal: 'Thank you for taking time to check in. Your responses suggest minimal depressive symptoms today. Continue with the routines that support your wellbeing, and reach out whenever you need to talk.',
-	mild: 'You shared some early signs of strain. Gentle routines—like staying connected to people who care about you, breathing exercises, and regular movement—can help. We are here if you want to talk more.',
-	moderate: 'Your answers show that this has been a heavy stretch. Talking with a clinician can help create a plan that matches your realities. We would be honoured to support you via telehealth or in person.',
-	'moderately-severe': 'You are carrying a lot right now. Connecting with our mental health team soon can provide relief and a path forward. Please consider booking a telehealth visit or coming to the clinic when you can.',
-	severe: 'Your responses show that things feel very difficult. Please reach out for immediate support—call the clinic, visit us, or contact emergency services. You do not have to walk through this alone.'
+	minimal: 'Thank you for checking in. Your answers fall in the minimal range. Keep looking after yourself and repeat the check-in if things change.',
+	mild: 'Your answers land in the mild range. Staying connected to people you trust and keeping steady routines may help. Reach out if you would like extra support.',
+	moderate: 'Your answers are in the moderate range. Booking a telehealth visit or clinic appointment can help you plan next steps together with a clinician.',
+	'moderately-severe': 'Your answers are in the moderately severe range. Please get in touch with our mental health team soon by telehealth or at the clinic so we can assist you.',
+	severe: 'Your answers are in the severe range. Please contact the clinic, visit in person, or call emergency services right away for support.'
 }
 
 type SupportRequestBody = {
@@ -33,12 +33,12 @@ function buildPrompt(body: Required<SupportRequestBody>): OpenAiMessage[] {
 	const system: OpenAiMessage = {
 		role: 'system',
 		content:
-			'You are a licensed Kenyan mental health clinician crafting a brief, empathetic response for a digital self-check conversation. Respond in English. Use warm, person-first language, and emphasise that help is available. Do not provide a diagnosis, never mention the PHQ-9 directly, and do not make promises you cannot guarantee. The clinic offers 24/7 telehealth and in-person support. Include clear next steps, encourage reaching out to trusted supports, and remind them emergency services (999 or 1199 in Kenya) are available. Keep the response under 120 words.'
+			'You are a licensed Kenyan mental health clinician crafting a brief, plain-language response for a digital self-check conversation. Respond in English, stay respectful, and avoid assumptions about feelings beyond what is provided. Do not provide a diagnosis, never mention the PHQ-9 directly, and do not make promises you cannot guarantee. Briefly remind them about available support (telehealth, clinic, emergency services 999 or 1199) and invite them to choose what feels right. Keep the response under 120 words.'
 	}
 
 	const user: OpenAiMessage = {
 		role: 'user',
-		content: `Screening summary: total score ${score}. Severity category: ${severity}. Positive screen: ${positive}. Self-harm response level: ${harmResponse}. Craft a caring 3-4 sentence reply, thank them for sharing, highlight that their feelings matter, and invite them to connect with the clinic via telehealth or in person. If self-harm response level is 1 or higher, explicitly encourage urgent contact with emergency services and the clinic.`
+		content: `Screening summary: total score ${score}. Severity category: ${severity}. Positive screen: ${positive}. Self-harm response level: ${harmResponse}. Craft a caring 3-4 sentence reply that thanks them for sharing, keeps language simple, and offers clear next steps such as telehealth, in-person care, or reaching out to trusted people. If self-harm response level is 1 or higher, clearly advise them to contact emergency services and the clinic right away.`
 	}
 
 	return [system, user]
@@ -58,7 +58,7 @@ function validateBody(body: SupportRequestBody): body is Required<SupportRequest
 function buildFallback(body: Required<SupportRequestBody>): string {
 	const base = FALLBACK_MESSAGES[body.severity]
 	const caution = body.harmResponse >= 1
-		? ' Because you mentioned thoughts of self-harm, please contact emergency services (999 or 1199) or visit the nearest facility immediately, and let someone you trust know how you are feeling.'
+		? ' Because you selected thoughts of self-harm, please call emergency services (999 or 1199) or visit the nearest facility right away, and let someone you trust know.'
 		: ''
 
 	const followUp = body.positive

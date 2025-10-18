@@ -42,9 +42,9 @@ function createMessage(role: ChatMessage['role'], content: string): ChatMessage 
 }
 
 const supportivePhrases = {
-	low: 'Thank you for checking in. I appreciate you noticing even the small shifts.',
-	medium: 'I hear you. Those feelings can be heavy—let’s keep going together.',
-	high: 'I’m really grateful you shared that. You deserve support and we’ll walk through this step by step.'
+	low: 'Thanks for telling me. Here comes the next question.',
+	medium: 'I appreciate you sharing that. Let’s keep going at your pace.',
+	high: 'Thank you for being open. We’ll move to the next question together.'
 }
 
 type SupportResponse = {
@@ -64,12 +64,12 @@ export default function MentalHealthAssistant() {
 		{
 			id: 'assistant-intro',
 			role: 'assistant',
-			content: 'Hi, I’m here to help you check in with how you\'re feeling. We\'ll walk through a short set of evidence-based questions and make sure you have support afterwards.'
+			content: 'Hi, I’m here to guide a short check-in about how you’ve been feeling. We’ll go through a few quick questions together.'
 		},
 		{
 			id: 'assistant-safety',
 			role: 'assistant',
-			content: 'This isn\'t an emergency service. If you ever feel unsafe, please contact emergency services (Kenya: 999 or 1199) or go to the nearest facility immediately.'
+			content: 'This tool can’t handle emergencies. If you need immediate help, please call 999 or 1199 in Kenya or visit the nearest clinic.'
 		}
 	])
 	const [responses, setResponses] = useState<number[]>([])
@@ -89,7 +89,7 @@ export default function MentalHealthAssistant() {
 		setHasStarted(true)
 		setMessages((prev) => [
 			...prev,
-			createMessage('assistant', 'Thanks for giving yourself a few minutes. I will ask each PHQ-9 question one at a time. Your answers are kept private and aren\'t stored.')
+			createMessage('assistant', 'Thanks for taking a few minutes. I’ll ask each question one at a time, and your answers stay on this device.')
 		])
 		void trackAnalytics({ event: 'started' })
 	}
@@ -126,10 +126,10 @@ export default function MentalHealthAssistant() {
 		const interpretation = interpretPhq9(totalScore)
 		const harmFlagged = harmResponseIsConcerning(newResponses)
 		const reassurance = interpretation.isPositiveScreen
-			? 'You\'re not alone in feeling this way, and support is available.'
-			: 'Even when scores are low, it\'s still important to keep checking in with yourself.'
+			? 'Support is available if you would like it.'
+			: 'It can still help to keep an eye on how you feel and reach out when you need to.'
 
-		const summaryMessage = `Thank you for completing the check-in. Your PHQ-9 score is ${totalScore}, which falls in the "${interpretation.severity.replace('-', ' ')}" range. ${interpretation.recommendation}`
+		const summaryMessage = `Thanks for finishing the check-in. Your score is ${totalScore}, which is in the "${interpretation.severity.replace('-', ' ')}" range. ${interpretation.recommendation}`
 
 		setMessages((prev) => [
 			...prev,
@@ -235,7 +235,7 @@ export default function MentalHealthAssistant() {
 								<div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
 									<p className="font-semibold">Immediate support is available</p>
 									<p>
-										Because you indicated some thoughts of self-harm, please contact our team right away or reach out to emergency services. You deserve immediate support.
+										Because you selected thoughts of self-harm, please call emergency services or contact our team right away.
 									</p>
 								</div>
 							)}

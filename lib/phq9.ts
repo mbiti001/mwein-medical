@@ -20,48 +20,40 @@ export const PHQ9_OPTIONS: readonly Phq9Option[] = [
 export const PHQ9_QUESTIONS: readonly Phq9Question[] = [
 	{
 		id: 'interest',
-		prompt: 'How often have you had little interest or pleasure in doing things?',
-		context: 'This helps us notice shifts in enjoyment or motivation.'
+		prompt: 'In the past two weeks, how often have you lost interest or pleasure in things you usually enjoy?'
 	},
 	{
 		id: 'mood',
-		prompt: 'How often have you been feeling down, depressed, or hopeless?',
-		context: 'Your emotional tone matters and deserves attention.'
+		prompt: 'How often have you felt sad, low, or without hope?'
 	},
 	{
 		id: 'sleep',
-		prompt: 'How often have you had trouble falling asleep, staying asleep, or sleeping too much?',
-		context: 'Sleep changes can be an important signal from your body.'
+		prompt: 'How often have you struggled to fall asleep, stay asleep, or slept far more than usual?'
 	},
 	{
 		id: 'energy',
-		prompt: 'How often have you felt tired or had little energy?',
-		context: 'Energy levels affect how you move through your day.'
+		prompt: 'How often have you felt tired or short on energy?'
 	},
 	{
 		id: 'appetite',
-		prompt: 'How often have you had a poor appetite or been overeating?',
-		context: 'We look for shifts in appetite because they often accompany mood changes.'
+		prompt: 'How often have you eaten much less or much more than usual?'
 	},
 	{
 		id: 'self',
-		prompt: 'How often have you felt bad about yourself—or that you are a failure or have let yourself or your family down?',
-		context: 'Self-judgment can be heavy, and naming it can lighten the load.'
+		prompt: 'How often have you felt bad about yourself or felt that you let yourself or your family down?'
 	},
 	{
 		id: 'concentration',
-		prompt: 'How often have you had trouble concentrating on things, such as reading or watching television?',
-		context: 'Focus and attention are part of how our brain copes with stress.'
+		prompt: 'How often have you found it hard to concentrate on things like reading or watching TV?'
 	},
 	{
 		id: 'movement',
-		prompt: 'How often have you been moving or speaking so slowly that other people could have noticed? Or the opposite—being so fidgety or restless that you have been moving around a lot more than usual?',
-		context: 'Changes in pace can be a physical sign of how you are feeling inside.'
+		prompt: 'How often have you moved or spoken much slower than normal, or felt very fidgety or restless?'
 	},
 	{
 		id: 'harm',
-		prompt: 'How often have you had thoughts that you would be better off dead or of hurting yourself in some way?',
-		context: 'If you ever feel unsafe, please reach out for immediate help.'
+		prompt: 'How often have you had thoughts about hurting yourself or that you would be better off not being here?',
+		context: 'If you feel unsafe, please contact someone you trust or emergency services right away.'
 	}
 ] as const
 
