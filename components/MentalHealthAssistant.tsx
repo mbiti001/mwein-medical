@@ -177,8 +177,8 @@ export default function MentalHealthAssistant() {
 	const harmConcern = harmResponseIsConcerning(responses)
 
 	return (
-		<section className="mx-auto max-w-4xl space-y-8">
-			<header className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-6">
+		<section className="mx-auto max-w-4xl space-y-8 px-4 sm:px-6">
+			<header className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
 				<h1 className="text-3xl font-semibold text-slate-900">Mental health check-in</h1>
 				<p className="text-base text-slate-600">
 					This guided conversation uses the clinically validated PHQ-9 questionnaire to understand how you have been feeling over the last two weeks. Your answers stay on this device—we do not store them. If you are in immediate danger, please reach out to emergency services (Kenya: <strong>999</strong> or <strong>1199</strong>) or visit the nearest facility right away.
@@ -189,12 +189,12 @@ export default function MentalHealthAssistant() {
 			</header>
 
 			<div className="rounded-3xl border border-slate-200 bg-white shadow-sm">
-				<div className="space-y-4 border-b border-slate-100 bg-slate-50 px-6 py-5">
+				<div className="space-y-4 border-b border-slate-100 bg-slate-50 px-4 py-5 sm:px-6">
 					<h2 className="text-lg font-semibold text-slate-900">Supportive assistant</h2>
 					<p className="text-sm text-slate-600">I&apos;ll ask one question at a time and offer next steps based on your responses.</p>
 				</div>
 
-				<div className="space-y-4 px-6 py-6">
+				<div className="space-y-4 px-4 py-6 sm:px-6">
 					<div className="space-y-4">
 						{messages.map((message) => (
 							<div
@@ -212,14 +212,14 @@ export default function MentalHealthAssistant() {
 					</div>
 
 					{!hasStarted ? (
-						<div className="mt-6 flex flex-col gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-5 text-sm text-slate-600">
+						<div className="mt-6 flex flex-col gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600 sm:p-5">
 							<p>When you&apos;re ready, start the PHQ-9 check-in. It usually takes less than three minutes.</p>
-							<button type="button" className="btn-primary self-start" onClick={handleStart}>
+							<button type="button" className="btn-primary w-full justify-center sm:w-auto" onClick={handleStart}>
 								Begin PHQ-9 check-in
 							</button>
 						</div>
 					) : hasCompleted ? (
-						<div className="mt-6 space-y-4 rounded-2xl border border-primary/20 bg-primary/5 p-5 text-sm text-slate-700">
+						<div className="mt-6 space-y-4 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm text-slate-700 sm:p-5">
 							{result && score !== null && (
 								<div className="space-y-2">
 									<p className="text-base font-semibold text-slate-900">PHQ-9 summary</p>
@@ -238,8 +238,8 @@ export default function MentalHealthAssistant() {
 								</div>
 							)}
 							<div className="grid gap-3 sm:grid-cols-2">
-								<Link href="/contact" className="btn-primary justify-center" onClick={() => void trackAnalytics({ event: 'telehealth_cta' })}>Book telehealth support</Link>
-								<a className="btn-outline justify-center" href="tel:+254707711888" onClick={() => void trackAnalytics({ event: 'call_cta' })}>Call the clinic</a>
+								<Link href="/contact" className="btn-primary w-full justify-center sm:w-auto" onClick={() => void trackAnalytics({ event: 'telehealth_cta' })}>Book telehealth support</Link>
+								<a className="btn-outline w-full justify-center sm:w-auto" href="tel:+254707711888" onClick={() => void trackAnalytics({ event: 'call_cta' })}>Call the clinic</a>
 							</div>
 							<p className="text-xs text-slate-500">
 								If you prefer in-person care, you can walk into the clinic 24/7 or visit the nearest trusted facility. Bring a loved one if you would like extra support.
@@ -248,16 +248,16 @@ export default function MentalHealthAssistant() {
 						</div>
 					) : (
 						activeQuestion && (
-							<div className="mt-6 space-y-3 rounded-2xl border border-slate-100 bg-slate-50 p-5">
+							<div className="mt-6 space-y-3 rounded-2xl border border-slate-100 bg-slate-50 p-4 sm:p-5">
 								<p className="text-base font-semibold text-slate-900">{activeQuestion.prompt}</p>
 								{activeQuestion.context && <p className="text-sm text-slate-600">{activeQuestion.context}</p>}
-								<div className="grid gap-3 sm:grid-cols-2">
+								<div className="grid gap-2 sm:grid-cols-2 sm:gap-3">
 									{PHQ9_OPTIONS.map((option) => (
 										<button
 											key={option.value}
 											type="button"
 											onClick={() => handleAnswer(option.value)}
-											className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-sm text-slate-700 shadow-sm transition hover:border-primary/40 hover:bg-primary/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+											className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-sm text-slate-700 shadow-sm transition hover:border-primary/40 hover:bg-primary/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
 										>
 											<span className="block font-medium text-slate-900">{option.label}</span>
 											<span className="block text-xs text-slate-500">{option.description}</span>

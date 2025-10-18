@@ -36,13 +36,13 @@ function QuestionGroup({
 					const selected = answers[question.id]
 
 					return (
-						<div key={question.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+						<div key={question.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
 							<p className="text-sm font-medium text-slate-900">{question.prompt}</p>
 							{question.detail && <p className="mt-2 text-xs text-slate-500">{question.detail}</p>}
-							<div className="mt-3 flex gap-3">
+											<div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
 								<button
 									type="button"
-									className={`rounded-full border px-4 py-2 text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${
+									className={`w-full rounded-full border px-4 py-2 text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${
 										selected === 'yes'
 											? 'border-primary bg-primary text-white'
 											: 'border-slate-200 bg-slate-50 text-slate-700 hover:border-primary/40 hover:bg-primary/5'
@@ -53,7 +53,7 @@ function QuestionGroup({
 								</button>
 								<button
 									type="button"
-									className={`rounded-full border px-4 py-2 text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${
+									className={`w-full rounded-full border px-4 py-2 text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${
 										selected === 'no'
 											? 'border-primary bg-primary text-white'
 											: 'border-slate-200 bg-slate-50 text-slate-700 hover:border-primary/40 hover:bg-primary/5'
@@ -73,7 +73,7 @@ function QuestionGroup({
 
 function SummaryCard({ summary }: { summary: ScreeningSummary }) {
 	return (
-		<div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+		<div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
 			<div>
 				<p className="text-sm font-semibold uppercase tracking-wide text-primary">
 					{summary.type === 'breast' ? 'Breast assessment' : 'Cervical assessment'}
@@ -99,8 +99,8 @@ function SummaryCard({ summary }: { summary: ScreeningSummary }) {
 				</p>
 			)}
 			<div className="flex flex-col gap-3 pt-2 sm:flex-row">
-				<Link href="/contact" className="btn-primary justify-center">Book at our clinic</Link>
-				<a href="tel:+254707711888" className="btn-outline justify-center">Call +254 707 711 888</a>
+				<Link href="/contact" className="btn-primary w-full justify-center sm:w-auto">Book at our clinic</Link>
+				<a href="tel:+254707711888" className="btn-outline w-full justify-center sm:w-auto">Call +254 707 711 888</a>
 			</div>
 		</div>
 	)
@@ -148,8 +148,8 @@ export default function CancerScreeningTool() {
 	}
 
 	return (
-		<section className="mx-auto max-w-5xl space-y-8">
-			<header className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-6">
+		<section className="mx-auto max-w-5xl space-y-8 px-4 sm:px-6">
+			<header className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
 				<h1 className="text-3xl font-semibold text-slate-900">Breast and cervical health check</h1>
 				<p className="text-base text-slate-600">
 					Answer a few yes or no questions about common warning signs. Your responses stay on this device. If you notice symptoms, we will guide you to the next step.
@@ -159,7 +159,7 @@ export default function CancerScreeningTool() {
 				</p>
 			</header>
 
-			<div className="space-y-10">
+			<div className="space-y-8 sm:space-y-10">
 				<QuestionGroup
 					title="Breast changes"
 					description="These questions focus on common breast warning signs."
@@ -179,7 +179,7 @@ export default function CancerScreeningTool() {
 
 			<div className="space-y-3">
 				{error && <p className="text-sm text-red-600">{error}</p>}
-				<button type="button" className="btn-primary" onClick={handleReview}>
+				<button type="button" className="btn-primary w-full sm:w-auto" onClick={handleReview}>
 					Review guidance
 				</button>
 			</div>

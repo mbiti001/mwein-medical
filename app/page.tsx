@@ -10,8 +10,8 @@ export const metadata = buildPageMetadata({
 export default function Home() {
   return (
     <>
-      <section className="section-spacing rounded-3xl mb-12 bg-gradient-to-br from-white via-slate-50 to-sky-50 shadow-inset">
-        <div className="grid items-start gap-12 lg:grid-cols-[1.15fr_0.85fr]">
+      <section className="section-spacing mb-12 rounded-3xl bg-gradient-to-br from-white via-slate-50 to-sky-50 shadow-inset">
+        <div className="grid items-start gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:gap-12">
           <div>
             <span className="badge mb-4">Trusted community clinic</span>
             <h1>Mwein Medical Services</h1>
@@ -29,12 +29,12 @@ export default function Home() {
                 <p className="contact-tile-meta">On-call clinicians, oxygen, and partner ambulances 24/7.</p>
               </div>
             </div>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/contact" className="btn-primary">Book appointment</Link>
-              <a href="tel:+254707711888" className="btn-outline">Call +254 707 711 888</a>
-              <a href="https://wa.me/254707711888" className="btn-outline">WhatsApp triage</a>
-              <Link href="/cancer-screening" className="btn-outline">Cancer screening guide</Link>
-              <Link href="/mental-health" className="btn-outline">Mental health check-in</Link>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:flex lg:flex-wrap lg:gap-3">
+              <Link href="/contact" className="btn-primary w-full justify-center sm:w-auto">Book appointment</Link>
+              <a href="tel:+254707711888" className="btn-outline w-full justify-center sm:w-auto">Call +254 707 711 888</a>
+              <a href="https://wa.me/254707711888" className="btn-outline w-full justify-center sm:w-auto">WhatsApp triage</a>
+              <Link href="/cancer-screening" className="btn-outline w-full justify-center sm:w-auto">Cancer screening guide</Link>
+              <Link href="/mental-health" className="btn-outline w-full justify-center sm:w-auto">Mental health check-in</Link>
             </div>
             <p className="mt-4 text-sm text-slate-500">
               SHA and Yatta Insurance accepted; more partners onboarding soon. Need help with transport or referrals? Call ahead and we’ll coordinate for you.
@@ -66,7 +66,7 @@ export default function Home() {
       </section>
 
       <section className="section-spacing">
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <div className="card space-y-3">
             <span className="badge">Fast triage</span>
             <h3>Emergency hotline</h3>
@@ -87,12 +87,12 @@ export default function Home() {
       </section>
 
       <section className="section-spacing">
-        <div className="flex items-center justify-between gap-4 mb-8">
+        <div className="mb-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="mb-2">More from Mwein</h2>
             <p className="text-slate-600 max-w-2xl">Explore how our nurses, clinicians, and specialists work together to keep your family healthy at every life stage.</p>
           </div>
-          <Link href="/services" className="btn-outline">Browse services</Link>
+          <Link href="/services" className="btn-outline w-full justify-center sm:w-auto">Browse services</Link>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
           <div className="card h-full">
@@ -110,8 +110,8 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="section-spacing bg-surface rounded-3xl border border-slate-100 p-8 md:p-12 mb-12">
-        <div className="grid gap-8 md:grid-cols-2 items-start">
+      <section className="section-spacing mb-12 rounded-3xl border border-slate-100 bg-surface p-6 sm:p-8 md:p-12">
+        <div className="grid items-start gap-6 sm:gap-8 md:grid-cols-2">
           <div className="space-y-3">
             <h3>Your next steps</h3>
             <p className="text-slate-600">Whether you need an urgent review, routine clinic visit, or telehealth consult, we’ll match you with the right clinician and confirm preparation details before you arrive.</p>
@@ -124,8 +124,8 @@ export default function Home() {
           <div className="card space-y-4">
             <h4 className="font-semibold text-slate-900">Ready when you are</h4>
             <div className="grid gap-3 sm:grid-cols-2">
-              <Link href="/contact" className="btn-primary justify-center">Book now</Link>
-              <a href="https://wa.me/254707711888" className="btn-outline justify-center">WhatsApp updates</a>
+              <Link href="/contact" className="btn-primary w-full justify-center sm:w-auto">Book now</Link>
+              <a href="https://wa.me/254707711888" className="btn-outline w-full justify-center sm:w-auto">WhatsApp updates</a>
             </div>
             <p className="text-sm text-slate-600">Need a detailed service guide? Explore our <Link href="/services" className="underline">departments</Link> or visit the <Link href="/services/outpatient" className="underline">outpatient hub</Link>.</p>
           </div>
