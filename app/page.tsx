@@ -33,6 +33,7 @@ export default function Home() {
               <Link href="/contact" className="btn-primary">Book appointment</Link>
               <a href="tel:+254707711888" className="btn-outline">Call +254 707 711 888</a>
               <a href="https://wa.me/254707711888" className="btn-outline">WhatsApp triage</a>
+              <Link href="/cancer-screening" className="btn-outline">Cancer screening guide</Link>
               <Link href="/mental-health" className="btn-outline">Mental health check-in</Link>
             </div>
             <p className="mt-4 text-sm text-slate-500">

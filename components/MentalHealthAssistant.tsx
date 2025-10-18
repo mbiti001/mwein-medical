@@ -42,9 +42,9 @@ function createMessage(role: ChatMessage['role'], content: string): ChatMessage 
 }
 
 const supportivePhrases = {
-	low: 'Thanks for telling me. Here comes the next question.',
-	medium: 'I appreciate you sharing that. Let’s keep going at your pace.',
-	high: 'Thank you for being open. We’ll move to the next question together.'
+	low: 'Thanks for sharing that. I’m here with you.',
+	medium: 'I appreciate you being open with me.',
+	high: 'Thank you for trusting me with that answer.'
 }
 
 type SupportResponse = {
@@ -110,12 +110,10 @@ export default function MentalHealthAssistant() {
 
 		if (!isLastQuestion) {
 			const nextIndex = questionIndex + 1
-			const nextQuestion = PHQ9_QUESTIONS[nextIndex]
 			const affirmation = value >= 2 ? supportivePhrases.high : value === 1 ? supportivePhrases.medium : supportivePhrases.low
 			setMessages((prev) => [
 				...prev,
-				createMessage('assistant', `${affirmation} ${nextQuestion.context ?? ''}`.trim()),
-				createMessage('assistant', nextQuestion.prompt)
+				createMessage('assistant', affirmation)
 			])
 			setQuestionIndex(nextIndex)
 			return

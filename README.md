@@ -103,6 +103,12 @@ When SMTP is configured you should receive an email at `CONTACT_EMAIL`; otherwis
 - The API proxy (`/api/mental-health/support`) only sends aggregate scoring data to OpenAI and strips identifiers to support compliance with data-protection expectations.
 - Aggregate analytics for the check-in are captured via `/api/mental-health/analytics`, which increments `SiteMetric` totals for starts, completions, severity bands, positive screens, harm alerts, and care CTA clicks without recording any individual responses.
 
+## Breast and cervical screening guide
+
+- `/cancer-screening` walks visitors through simple yes/no questions covering common breast and cervical warning signs plus cervical screening history.
+- Positive responses trigger clear guidance to book an evaluation at the clinic or, when travel is difficult, to visit a nearby facility and share the outcome for follow-up support.
+- The tool keeps answers in the browser and links directly to clinic contact options for fast next steps.
+
 ## Donation experience highlights
 
 - `components/DonationRail.tsx` renders a right-to-left ticker showcasing recent supporters. Pass it an array of `{ id, who, amount, message, time }` entries; the component will duplicate cars automatically so the loop never stutters.
