@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model AppointmentRequest {
+  id               String    @id @default(uuid())
+  name             String
+  phone            String
+  email            String?
+  preferredDate    String
+  preferredTime    String
+  reason           String
+  patientAge       Int?
+  patientGender    String?
+  consultationType String    @default("IN_PERSON")
+  consultationDate DateTime?
+  status           String    @default("NEW")
+  identifier       String?
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([status, createdAt])
+  @@index([identifier])
+  @@index([consultationType, consultationDate])
+}
+
+model ExitFeedback {
+  id          String   @id @default(uuid())
+  outcome     String
+  explanation String?
+  email       String?
+  pagePath    String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([outcome])
+}
+
+model SiteMetric {
+  key       String   @id
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+model DonationSupporter {
+  id                 String    @id @default(uuid())
+  firstName          String
+  normalizedName     String    @unique
+  totalAmount        Int       @default(0)
+  donationCount      Int       @default(0)
+  lastChannel        String?
+  lastContributionAt DateTime?
+  publicAcknowledgement Boolean @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([donationCount, totalAmount])
+}

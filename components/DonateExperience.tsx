@@ -1,23 +1,50 @@
 "use client"
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { FormEvent, KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Check, Copy, Gift, HeartHandshake, PartyPopper } from 'lucide-react'
 import { triggerDonationCelebration } from './DonationCelebration'
 
 const MPESA_TILL = '8121096'
-const STORAGE_KEY = 'mwein-contribution-log'
+const VISITOR_SESSION_KEY = 'mwein-donation-visitor-counted'
 
 type Channel = 'M-Pesa' | 'PayPal' | 'Cash/Other'
 type ConsentState = 'pending' | 'granted' | 'declined'
 
-type Contribution = {
+type SupporterSnapshot = {
   id: string
   firstName: string
+  totalAmount: number
+  donationCount: number
+  lastChannel: Channel | null
+  lastContributionAt: string | null
+  publicAcknowledgement: boolean
+}
+
+type SupporterTrendPoint = {
+  date: string
+  newSupporters: number
+}
+
+type SupporterTotals = {
+  totalAmount: number
+  totalGifts: number
+  totalSupporters: number
+  publicSupporters: number
+  activeSupporters: number
+  newSupporters: number
+}
+
+type SupporterResponse = {
+  supporters: SupporterSnapshot[]
+  totals: SupporterTotals
+  recentNewSupporters: SupporterTrendPoint[]
+}
+
+type PendingShare = {
+  supporterId: string
+  firstName: string
   amount: number
-  channel: Channel
-  shareConsent: ConsentState
-  timestamp: string
 }
 
 type FormState = {
@@ -32,59 +59,128 @@ const currencyFormatter = new Intl.NumberFormat('en-KE', {
   maximumFractionDigits: 0
 })
 
+const numberFormatter = new Intl.NumberFormat('en-KE')
+const shortDateFormatter = new Intl.DateTimeFormat('en-KE', {
+  month: 'short',
+  day: 'numeric'
+})
+const paceFormatter = new Intl.NumberFormat('en-KE', {
+  maximumFractionDigits: 1
+})
+
 const formatAmount = (amount: number) => currencyFormatter.format(Math.round(amount))
+const formatTrendDate = (date: string) => shortDateFormatter.format(new Date(`${date}T00:00:00Z`))
 
 export default function DonateExperience() {
   const [copied, setCopied] = useState(false)
   const [acknowledgement, setAcknowledgement] = useState<string | null>(null)
-  const [contributions, setContributions] = useState<Contribution[]>([])
-  const [pendingContributionId, setPendingContributionId] = useState<string | null>(null)
+  const [supporters, setSupporters] = useState<SupporterSnapshot[]>([])
+  const [supporterTrend, setSupporterTrend] = useState<SupporterTrendPoint[]>([])
+  const [supporterTotals, setSupporterTotals] = useState<SupporterTotals>({
+    totalAmount: 0,
+    totalGifts: 0,
+    totalSupporters: 0,
+    publicSupporters: 0,
+    activeSupporters: 0,
+    newSupporters: 0
+  })
+  const [hoveredTrendIndex, setHoveredTrendIndex] = useState<number | null>(null)
+  const [selectedTrendIndex, setSelectedTrendIndex] = useState<number | null>(null)
+  const [pendingShare, setPendingShare] = useState<PendingShare | null>(null)
   const [formValues, setFormValues] = useState<FormState>({ firstName: '', amount: '', channel: 'M-Pesa' })
   const [formError, setFormError] = useState<string | null>(null)
+  const [visitorCount, setVisitorCount] = useState<number | null>(null)
+  const [hasCountedVisitor, setHasCountedVisitor] = useState(false)
+  const [visitorLoading, setVisitorLoading] = useState(false)
+  const [visitorError, setVisitorError] = useState<string | null>(null)
+  const [supporterLoading, setSupporterLoading] = useState(false)
+  const [supporterError, setSupporterError] = useState<string | null>(null)
+  const [consentError, setConsentError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [consentSubmitting, setConsentSubmitting] = useState(false)
   const logSectionRef = useRef<HTMLDivElement | null>(null)
   const ackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY)
-      if (!stored) return
-      const parsed = JSON.parse(stored)
-      if (!Array.isArray(parsed)) return
-      const restored = parsed
-        .filter((item): item is Contribution => {
-          return (
-            item &&
-            typeof item === 'object' &&
-            typeof item.id === 'string' &&
-            typeof item.firstName === 'string' &&
-            typeof item.amount === 'number' &&
-            (item.channel === 'M-Pesa' || item.channel === 'PayPal' || item.channel === 'Cash/Other')
-            && (item.shareConsent === 'pending' || item.shareConsent === 'granted' || item.shareConsent === 'declined')
-          )
-        })
-        .map(item => {
-          const shareConsent: ConsentState =
-            item.shareConsent === 'granted'
-              ? 'granted'
-              : item.shareConsent === 'declined'
-                ? 'declined'
-                : 'pending'
-          return {
-            ...item,
-            shareConsent
-          }
-        })
-      setContributions(restored)
-    } catch (error) {
-      console.error('Unable to restore contribution log', error)
-    }
+    setHasCountedVisitor(Boolean(sessionStorage.getItem(VISITOR_SESSION_KEY)))
   }, [])
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(contributions))
-  }, [contributions])
+    let cancelled = false
+    const loadVisitorCount = async () => {
+      try {
+        const response = await fetch('/api/metrics/visitors', { headers: { 'cache-control': 'no-store' } })
+        if (!response.ok) {
+          throw new Error(`Unexpected status ${response.status}`)
+        }
+        const payload: { count?: number } = await response.json()
+        if (!cancelled) {
+          setVisitorCount(typeof payload.count === 'number' ? payload.count : 0)
+          setVisitorError(null)
+        }
+      } catch (error) {
+        console.error('Unable to load visitor count', error)
+        if (!cancelled) {
+          setVisitorError('We will update the crowd size shortly.')
+        }
+      }
+    }
+
+    loadVisitorCount()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+  const loadSupporters = useCallback(
+    async (signal?: AbortSignal, silent = false) => {
+      if (!silent) {
+        setSupporterLoading(true)
+      }
+
+      try {
+        const response = await fetch('/api/donations/supporters', {
+          headers: { 'cache-control': 'no-store' },
+          signal
+        })
+
+        if (!response.ok) {
+          throw new Error(`Unexpected status ${response.status}`)
+        }
+
+        const payload: SupporterResponse = await response.json()
+        setSupporters(payload.supporters)
+    setSupporterTotals(payload.totals)
+    setSupporterTrend(payload.recentNewSupporters)
+        setSupporterError(null)
+      } catch (error) {
+        if ((error as Error).name === 'AbortError' || signal?.aborted) {
+          return
+        }
+        console.error('Unable to load supporters', error)
+        setSupporterError('We are fetching the gratitude wall—please try again shortly.')
+      } finally {
+        if (!silent && !signal?.aborted) {
+          setSupporterLoading(false)
+        }
+      }
+    },
+    []
+  )
+
+  useEffect(() => {
+    const controller = new AbortController()
+    loadSupporters(controller.signal).catch(error => {
+      if ((error as Error).name !== 'AbortError') {
+        console.error('Failed to prime supporters', error)
+      }
+    })
+
+    return () => {
+      controller.abort()
+    }
+  }, [loadSupporters])
 
   useEffect(() => {
     return () => {
@@ -94,22 +190,93 @@ export default function DonateExperience() {
     }
   }, [])
 
-  const totals = useMemo(() => {
-    const totalAmount = contributions.reduce((sum, entry) => sum + entry.amount, 0)
-    const publicContributions = contributions.filter(entry => entry.shareConsent === 'granted')
-    return {
-      totalAmount,
-      totalCount: contributions.length,
-      publicContributions
+  const publicSupporters = useMemo(() => supporters.filter(entry => entry.publicAcknowledgement), [supporters])
+  const latestPublic = useMemo(() => publicSupporters.slice(0, 6), [publicSupporters])
+  const trendInsights = useMemo(() => {
+    if (supporterTrend.length === 0) {
+      return null
     }
-  }, [contributions])
 
-  const pendingContribution = useMemo(() => {
-    if (pendingContributionId) {
-      return contributions.find(entry => entry.id === pendingContributionId)
+    const total = supporterTrend.reduce((sum, entry) => sum + entry.newSupporters, 0)
+    const lastSeven = supporterTrend.slice(-7)
+    const lastSevenTotal = lastSeven.reduce((sum, entry) => sum + entry.newSupporters, 0)
+    const averagePerDay = lastSeven.length > 0 ? lastSevenTotal / lastSeven.length : 0
+    const latestPoint = supporterTrend[supporterTrend.length - 1]
+    const bestPoint = supporterTrend.reduce((best, entry) => (entry.newSupporters > best.newSupporters ? entry : best), supporterTrend[0])
+
+    const width = 160
+    const height = 72
+    const padding = 8
+    const usableHeight = height - padding * 2
+    const baseline = height - padding
+    const maxValue = Math.max(...supporterTrend.map(entry => entry.newSupporters), 1)
+    const denominator = Math.max(supporterTrend.length - 1, 1)
+
+    const points = supporterTrend.map((entry, index) => {
+      const x = (index / denominator) * width
+      const scaledY = entry.newSupporters === 0 ? 0 : (entry.newSupporters / maxValue) * usableHeight
+      const y = baseline - scaledY
+      return { x, y }
+    })
+
+    const linePath = points
+      .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
+      .join(' ')
+
+  const lastPoint = points[points.length - 1]
+    const areaPath = [
+      `M 0 ${baseline.toFixed(2)}`,
+      ...points.map(point => `L ${point.x.toFixed(2)} ${point.y.toFixed(2)}`),
+      `L ${lastPoint ? lastPoint.x.toFixed(2) : '0'} ${baseline.toFixed(2)}`,
+      'Z'
+    ].join(' ')
+
+    return {
+      total,
+      lastSevenTotal,
+      averagePerDay,
+      latestPoint,
+      bestPoint,
+      width,
+      height,
+      baseline,
+      linePath,
+      areaPath,
+      maxValue,
+      lastPoint,
+      points,
+      quietDays: supporterTrend.filter(entry => entry.newSupporters === 0).length,
+      startDate: supporterTrend[0].date,
+      endDate: supporterTrend[supporterTrend.length - 1].date
     }
-    return contributions.find(entry => entry.shareConsent === 'pending') || null
-  }, [contributions, pendingContributionId])
+  }, [supporterTrend])
+  const activeTrendIndex = useMemo(() => {
+    if (!trendInsights || supporterTrend.length === 0) {
+      return null
+    }
+    const clamp = (value: number) => Math.min(Math.max(value, 0), supporterTrend.length - 1)
+    if (hoveredTrendIndex !== null) {
+      return clamp(hoveredTrendIndex)
+    }
+    if (selectedTrendIndex !== null) {
+      return clamp(selectedTrendIndex)
+    }
+    return supporterTrend.length - 1
+  }, [hoveredTrendIndex, selectedTrendIndex, supporterTrend, trendInsights])
+  const activeTrendPoint = activeTrendIndex !== null ? supporterTrend[activeTrendIndex] : null
+  const trendWindowLabel = trendInsights ? `${formatTrendDate(trendInsights.startDate)} – ${formatTrendDate(trendInsights.endDate)}` : ''
+  const weeklyPace = trendInsights ? trendInsights.averagePerDay * 7 : 0
+  const trendStats = trendInsights
+    ? {
+        latestCount: trendInsights.latestPoint.newSupporters,
+        latestLabel: formatTrendDate(trendInsights.latestPoint.date),
+        bestCount: trendInsights.bestPoint.newSupporters,
+        bestLabel: formatTrendDate(trendInsights.bestPoint.date),
+        quietDays: trendInsights.quietDays,
+        total: trendInsights.total,
+        lastSevenTotal: trendInsights.lastSevenTotal
+      }
+    : null
 
   const setTimedAcknowledgement = (message: string, duration = 7000) => {
     setAcknowledgement(message)
@@ -126,7 +293,47 @@ export default function DonateExperience() {
     logSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleVisitorCount = async () => {
+    if (hasCountedVisitor) {
+      setTimedAcknowledgement('You are already counted among today\'s cheerleaders!')
+      return
+    }
+
+    setVisitorLoading(true)
+    try {
+      const response = await fetch('/api/metrics/visitors', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' }
+      })
+
+      if (!response.ok) {
+        throw new Error(`Unexpected status ${response.status}`)
+      }
+
+      const payload: { count?: number } = await response.json()
+      const updated = typeof payload.count === 'number' ? payload.count : null
+
+      if (updated !== null) {
+        setVisitorCount(updated)
+        setTimedAcknowledgement(`Welcome aboard! You\'re visitor ${numberFormatter.format(updated)} championing emergency care today.`)
+      } else {
+        setTimedAcknowledgement('Thank you for raising your hand for Mungatsi families!')
+      }
+
+      setVisitorError(null)
+      setHasCountedVisitor(true)
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem(VISITOR_SESSION_KEY, new Date().toISOString())
+      }
+    } catch (error) {
+      console.error('Unable to increment visitor count', error)
+      setVisitorError('We could not record that click—please try again in a moment.')
+    } finally {
+      setVisitorLoading(false)
+    }
+  }
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const trimmedName = formValues.firstName.trim()
     const amountNumber = parseFloat(formValues.amount)
@@ -141,51 +348,103 @@ export default function DonateExperience() {
       return
     }
 
+    const contributionAmount = Math.round(amountNumber)
+
+    setSubmitting(true)
+    setConsentError(null)
+
     try {
-      const id = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}`
-      const newContribution: Contribution = {
-        id,
-        firstName: trimmedName,
-        amount: Math.round(amountNumber),
-        channel: formValues.channel,
-        shareConsent: 'pending',
-        timestamp: new Date().toISOString()
+      const response = await fetch('/api/donations/supporters', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          firstName: trimmedName,
+          amount: contributionAmount,
+          channel: formValues.channel,
+          shareConsent: 'pending'
+        })
+      })
+
+      if (!response.ok) {
+        const details = await response.json().catch(() => null)
+        if (response.status === 400 && details?.error === 'invalid-name') {
+          setFormError('Please use letters only for your first name so we can celebrate you properly.')
+          return
+        }
+        throw new Error(`Unexpected status ${response.status}`)
       }
 
-      setContributions(prev => [newContribution, ...prev])
-      setPendingContributionId(newContribution.id)
+      const payload: { supporter: SupporterSnapshot; totals: SupporterTotals; recentNewSupporters: SupporterTrendPoint[] } =
+        await response.json()
+
       triggerDonationCelebration()
-      setTimedAcknowledgement(`Thank you, ${trimmedName}! Your ${formValues.channel} gift is already making an impact.`)
+      setPendingShare({
+        supporterId: payload.supporter.id,
+        firstName: payload.supporter.firstName,
+        amount: contributionAmount
+      })
+      setTimedAcknowledgement(
+        `Thank you, ${payload.supporter.firstName}! Your ${formValues.channel} gift is already powering emergency care.`
+      )
       setFormValues(prev => ({ ...prev, firstName: '', amount: '' }))
       setFormError(null)
+      setSupporterTotals(payload.totals)
+  setSupporterTrend(payload.recentNewSupporters)
+      await loadSupporters(undefined, true)
     } catch (error) {
       console.error('Unable to log contribution', error)
       setFormError('We could not log your gift right now. Please try again or WhatsApp the clinic.')
+    } finally {
+      setSubmitting(false)
     }
   }
 
-  const handleConsent = (response: Exclude<ConsentState, 'pending'>) => {
-    if (!pendingContribution) return
+  const handleConsent = async (response: Exclude<ConsentState, 'pending'>) => {
+    if (!pendingShare) return
 
-    setContributions(prev =>
-      prev.map(entry =>
-        entry.id === pendingContribution.id
-          ? {
-              ...entry,
-              shareConsent: response
-            }
-          : entry
-      )
-    )
+    setConsentError(null)
+    setConsentSubmitting(true)
 
-    const name = pendingContribution.firstName
-    if (response === 'granted') {
-      setTimedAcknowledgement(`We'll celebrate you on our gratitude wall, ${name}!`)
-    } else {
-      setTimedAcknowledgement(`We'll keep your gift private, ${name}. Thank you for the trust.`)
+    try {
+      const apiResponse = await fetch('/api/donations/supporters', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          supporterId: pendingShare.supporterId,
+          shareConsent: response
+        })
+      })
+
+      if (!apiResponse.ok) {
+        const details = await apiResponse.json().catch(() => null)
+        if (apiResponse.status === 404 || details?.error === 'not-found') {
+          setConsentError('We could not locate your supporter record. Please log your gift again.')
+          setConsentSubmitting(false)
+          return
+        }
+        throw new Error(`Unexpected status ${apiResponse.status}`)
+      }
+
+      const payload: { supporter: SupporterSnapshot; totals: SupporterTotals; recentNewSupporters: SupporterTrendPoint[] } =
+        await apiResponse.json()
+      setSupporterTotals(payload.totals)
+      setSupporterTrend(payload.recentNewSupporters)
+      await loadSupporters(undefined, true)
+
+      const name = pendingShare.firstName
+      if (response === 'granted') {
+        setTimedAcknowledgement(`We'll celebrate you on our gratitude wall, ${name}!`)
+      } else {
+        setTimedAcknowledgement(`We'll keep your gift private, ${name}. Thank you for the trust.`)
+      }
+
+      setPendingShare(null)
+    } catch (error) {
+      console.error('Unable to update supporter acknowledgement', error)
+      setConsentError('We could not save that preference. Please try again in a moment.')
+    } finally {
+      setConsentSubmitting(false)
     }
-
-    setPendingContributionId(null)
   }
 
   const copyTillNumber = async () => {
@@ -198,7 +457,49 @@ export default function DonateExperience() {
     }
   }
 
-  const latestPublic = totals.publicContributions.slice(0, 6)
+  const handleTrendKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      if (!trendInsights || supporterTrend.length === 0) {
+        return
+      }
+
+      const clamp = (value: number) => Math.min(Math.max(value, 0), supporterTrend.length - 1)
+      const { key } = event
+      const supportedKeys = ['ArrowLeft', 'ArrowRight', 'Home', 'End'] as const
+
+      if (!supportedKeys.includes(key as (typeof supportedKeys)[number])) {
+        return
+      }
+
+      event.preventDefault()
+
+      const baseIndex = (() => {
+        if (hoveredTrendIndex !== null) {
+          return hoveredTrendIndex
+        }
+        if (selectedTrendIndex !== null) {
+          return selectedTrendIndex
+        }
+        return supporterTrend.length - 1
+      })()
+
+      let nextIndex = baseIndex
+
+      if (key === 'ArrowLeft') {
+        nextIndex = clamp(baseIndex - 1)
+      } else if (key === 'ArrowRight') {
+        nextIndex = clamp(baseIndex + 1)
+      } else if (key === 'Home') {
+        nextIndex = 0
+      } else if (key === 'End') {
+        nextIndex = supporterTrend.length - 1
+      }
+
+      setSelectedTrendIndex(nextIndex)
+      setHoveredTrendIndex(null)
+    },
+    [hoveredTrendIndex, selectedTrendIndex, supporterTrend, trendInsights]
+  )
 
   return (
     <section className="space-y-10">
@@ -236,6 +537,173 @@ export default function DonateExperience() {
         </div>
         <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-white/15 blur-3xl" aria-hidden />
         <div className="pointer-events-none absolute -bottom-24 -left-10 h-60 w-60 rounded-full bg-sky-200/40 blur-3xl" aria-hidden />
+      </div>
+
+      <div className="card border-primary/30 bg-white/70 shadow-lg">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-primary">
+              {visitorCount === null ? 'Counting neighbours cheering this work…' : `${numberFormatter.format(visitorCount)} neighbours have checked in today.`}
+            </p>
+            <p className="text-xs text-slate-500">
+              Tap the button once to add yourself—no sign-up required, just solidarity.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleVisitorCount}
+            className="btn-primary"
+            disabled={visitorLoading || hasCountedVisitor}
+          >
+            {visitorLoading ? 'Counting…' : hasCountedVisitor ? 'You are counted ❤' : 'Count me in'}
+          </button>
+        </div>
+        {visitorError && <p className="text-xs font-medium text-rose-600">{visitorError}</p>}
+      </div>
+
+      <div className="card border-primary/30 bg-white/80 shadow-lg">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-primary">
+              {numberFormatter.format(supporterTotals.activeSupporters)} supporter{supporterTotals.activeSupporters === 1 ? '' : 's'} fuelled care in the last 30 days.
+            </p>
+            <p className="text-xs text-slate-500">
+              {supporterTotals.newSupporters > 0
+                ? `${numberFormatter.format(supporterTotals.newSupporters)} first-time champion${supporterTotals.newSupporters === 1 ? ' has' : 's have'} joined this month.`
+                : 'Be the first new supporter this month—your gift keeps the ward lights on.'}
+            </p>
+          </div>
+          <div className="text-right text-xs text-slate-500">
+            {supporterTotals.publicSupporters > 0
+              ? `${numberFormatter.format(supporterTotals.publicSupporters)} name${supporterTotals.publicSupporters === 1 ? '' : 's'} celebrated on our wall`
+              : 'Add your name to our gratitude wall'}
+          </div>
+        </div>
+      </div>
+
+      <div className="card border-primary/40 bg-white/80 shadow-lg">
+        {trendInsights && trendStats ? (
+          <div className="space-y-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-primary">Supporter momentum (30 days)</p>
+                <p className="text-xs text-slate-500">{trendWindowLabel}</p>
+                <p className="text-xs text-slate-500">
+                  {trendStats.total > 0
+                    ? `${numberFormatter.format(trendStats.total)} neighbours have stepped up this month. On ${trendStats.latestLabel} we recorded ${numberFormatter.format(trendStats.latestCount)} new supporter${trendStats.latestCount === 1 ? '' : 's'}.`
+                    : 'We have not logged a new supporter in the last few days—your donation could start the trend.'}
+                </p>
+              </div>
+              <div
+                className="flex flex-col items-end gap-2"
+                role="group"
+                aria-label="Daily new supporters over the last 30 days"
+                aria-describedby="supporter-trend-instructions"
+                tabIndex={0}
+                onKeyDown={handleTrendKeyDown}
+                onFocus={event => {
+                  if (event.currentTarget === event.target && selectedTrendIndex === null && supporterTrend.length > 0) {
+                    setSelectedTrendIndex(supporterTrend.length - 1)
+                  }
+                }}
+              >
+                <p id="supporter-trend-instructions" className="sr-only">
+                  Use left and right arrow keys to move between each day. Press Home to jump to the first day or End for the most recent day.
+                </p>
+                <svg
+                  viewBox={`0 0 ${trendInsights.width} ${trendInsights.height}`}
+                  role="img"
+                  aria-label="Daily new supporters over the last 30 days"
+                  className="h-28 w-full max-w-[220px] text-primary"
+                  preserveAspectRatio="none"
+                  onPointerLeave={() => setHoveredTrendIndex(null)}
+                >
+                  <defs>
+                    <linearGradient id="supporter-trend-fill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="rgba(14,165,233,0.35)" />
+                      <stop offset="100%" stopColor="rgba(14,165,233,0)" />
+                    </linearGradient>
+                  </defs>
+                  <path d={`M 0 ${trendInsights.baseline.toFixed(2)} L ${trendInsights.width} ${trendInsights.baseline.toFixed(2)}`} stroke="rgba(148,163,184,0.35)" strokeDasharray="4 4" fill="none" />
+                  <path d={trendInsights.areaPath} fill="url(#supporter-trend-fill)" />
+                  <path d={trendInsights.linePath} fill="none" stroke="rgba(14,165,233,1)" strokeWidth={2} strokeLinecap="round" />
+                  {trendInsights.points.map((point, index) => {
+                    const isActive = activeTrendIndex === index
+                    const supporterPoint = supporterTrend[index]
+                    const ariaLabel = `On ${formatTrendDate(supporterPoint.date)}, ${supporterPoint.newSupporters} supporter${supporterPoint.newSupporters === 1 ? '' : 's'}`
+                    return (
+                      <g key={supporterPoint.date}>
+                        <circle
+                          cx={point.x}
+                          cy={point.y}
+                          r={isActive ? 3.5 : 2.5}
+                          fill={isActive ? 'rgba(14,165,233,1)' : 'rgba(14,165,233,0.6)'}
+                          stroke={isActive ? 'white' : 'transparent'}
+                          strokeWidth={isActive ? 1.6 : 0}
+                        />
+                        <circle
+                          cx={point.x}
+                          cy={point.y}
+                          r={6}
+                          fill="transparent"
+                          stroke="transparent"
+                          tabIndex={0}
+                          focusable="true"
+                          role="button"
+                          aria-label={ariaLabel}
+                          onPointerEnter={() => setHoveredTrendIndex(index)}
+                          onFocus={() => {
+                            setSelectedTrendIndex(index)
+                            setHoveredTrendIndex(null)
+                          }}
+                          onBlur={() => setHoveredTrendIndex(null)}
+                        />
+                      </g>
+                    )
+                  })}
+                </svg>
+                {activeTrendPoint && (
+                  <div className="w-full rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600" aria-live="polite" role="status">
+                    <span className="font-semibold text-slate-700">{formatTrendDate(activeTrendPoint.date)}</span>
+                    <span className="ml-2">
+                      {numberFormatter.format(activeTrendPoint.newSupporters)} new supporter
+                      {activeTrendPoint.newSupporters === 1 ? '' : 's'} recorded
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <span className="inline-flex h-2 w-2 rounded-full bg-primary" />
+                  Daily new supporters
+                </div>
+              </div>
+            </div>
+            <dl className="grid gap-3 text-xs text-slate-500 sm:grid-cols-3">
+              <div className="rounded-lg bg-primary/5 px-3 py-2">
+                <dt className="font-semibold text-primary">7-day pace</dt>
+                <dd className="text-slate-700">
+                  {paceFormatter.format(weeklyPace)} supporters / week
+                  <span className="block text-[11px] text-slate-500">{numberFormatter.format(trendStats.lastSevenTotal)} logged in the last 7 days</span>
+                </dd>
+              </div>
+              <div className="rounded-lg bg-primary/5 px-3 py-2">
+                <dt className="font-semibold text-primary">Busiest day</dt>
+                <dd className="text-slate-700">{trendStats.bestLabel}: {numberFormatter.format(trendStats.bestCount)}</dd>
+              </div>
+              <div className="rounded-lg bg-primary/5 px-3 py-2">
+                <dt className="font-semibold text-primary">Quiet days</dt>
+                <dd className="text-slate-700">{numberFormatter.format(trendStats.quietDays)} of 30</dd>
+              </div>
+            </dl>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-primary">Supporter momentum (30 days)</p>
+              <p className="text-xs text-slate-500">We are collecting new supporter stories—check back shortly for this chart.</p>
+            </div>
+            <p className="text-xs text-slate-500">Log a donation to light up this graph.</p>
+          </div>
+        )}
       </div>
 
       {acknowledgement && (
@@ -320,8 +788,12 @@ export default function DonateExperience() {
               </div>
               <div className="text-right">
                 <p className="text-xs uppercase tracking-wide text-slate-500">Total logged</p>
-                <p className="text-2xl font-semibold text-primary">{formatAmount(totals.totalAmount)}</p>
-                <p className="text-xs text-slate-500">{totals.totalCount} supporter{totals.totalCount === 1 ? '' : 's'}</p>
+                <p className="text-2xl font-semibold text-primary">{formatAmount(supporterTotals.totalAmount)}</p>
+                <p className="text-xs text-slate-500">
+                  {numberFormatter.format(supporterTotals.totalSupporters)} supporter{supporterTotals.totalSupporters === 1 ? '' : 's'} ·{' '}
+                  {numberFormatter.format(supporterTotals.totalGifts)} gift{supporterTotals.totalGifts === 1 ? '' : 's'} logged
+                </p>
+                <p className="text-xs text-slate-400">{numberFormatter.format(supporterTotals.activeSupporters)} active in the last 30 days</p>
               </div>
             </div>
             <form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-2">
@@ -366,9 +838,9 @@ export default function DonateExperience() {
                 <p className="sm:col-span-2 text-sm font-medium text-rose-500">{formError}</p>
               )}
               <div className="sm:col-span-2 flex flex-wrap gap-3">
-                <button type="submit" className="btn-primary">
+                <button type="submit" className="btn-primary" disabled={submitting}>
                   <PartyPopper className="h-4 w-4" />
-                  Log my donation
+                  {submitting ? 'Logging…' : 'Log my donation'}
                 </button>
                 <button
                   type="button"
@@ -380,34 +852,61 @@ export default function DonateExperience() {
               </div>
             </form>
 
-            {latestPublic.length > 0 && (
+            {(latestPublic.length > 0 || supporterLoading || supporterError) && (
               <div className="border-t border-slate-200 pt-4">
                 <h4 className="text-sm font-semibold text-slate-700">Gratitude wall</h4>
-                <ul className="mt-2 space-y-2 text-sm text-slate-600">
-                  {latestPublic.map(entry => (
-                    <li key={entry.id} className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2">
-                      <span className="font-medium text-slate-800">{entry.firstName}</span>
-                      <span className="text-xs uppercase tracking-wide text-slate-500">{entry.channel}</span>
-                      <span className="font-semibold text-primary">{formatAmount(entry.amount)}</span>
-                    </li>
-                  ))}
-                </ul>
-                {totals.publicContributions.length > latestPublic.length && (
-                  <p className="mt-2 text-xs text-slate-500">{totals.publicContributions.length - latestPublic.length} more supporter{totals.publicContributions.length - latestPublic.length === 1 ? '' : 's'} honoured privately.</p>
+                {supporterError && <p className="mt-1 text-xs font-medium text-rose-500">{supporterError}</p>}
+                {supporterLoading && !supporterError && (
+                  <p className="mt-1 text-xs text-slate-500">Updating today&apos;s gratitude roll…</p>
+                )}
+                {latestPublic.length > 0 && (
+                  <ul className="mt-2 space-y-2 text-sm text-slate-600">
+                    {latestPublic.map(entry => (
+                      <li key={entry.id} className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2">
+                        <span className="font-medium text-slate-800">{entry.firstName}</span>
+                        <span className="text-xs uppercase tracking-wide text-slate-500">
+                          {entry.donationCount === 1
+                            ? '1 gift'
+                            : `${entry.donationCount} gifts`}
+                          {entry.lastChannel ? ` · ${entry.lastChannel}` : ''}
+                        </span>
+                        <span className="font-semibold text-primary">{formatAmount(entry.totalAmount)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {latestPublic.length === 0 && !supporterLoading && !supporterError && (
+                  <p className="mt-2 text-xs text-slate-500">Be the first to let us celebrate your gift today.</p>
+                )}
+                {publicSupporters.length > latestPublic.length && latestPublic.length > 0 && (
+                  <p className="mt-2 text-xs text-slate-500">
+                    {publicSupporters.length - latestPublic.length} more supporter{publicSupporters.length - latestPublic.length === 1 ? '' : 's'} honoured privately.
+                  </p>
                 )}
               </div>
             )}
           </div>
 
-          {pendingContribution && (
+          {pendingShare && (
             <div className="card border-dashed border-primary/40 bg-primary/5 text-primary">
-              <p className="text-sm font-semibold">Thank you, {pendingContribution.firstName}! May we list your gift of {formatAmount(pendingContribution.amount)}?</p>
-              <p className="text-xs text-primary/80">We only display first names and channels on the gratitude wall.</p>
+              <p className="text-sm font-semibold">Thank you, {pendingShare.firstName}! May we list your gift of {formatAmount(pendingShare.amount)}?</p>
+              <p className="text-xs text-primary/80">We only display first names, total gifts, and channels on the gratitude wall.</p>
+              {consentError && <p className="text-xs font-medium text-rose-600">{consentError}</p>}
               <div className="flex flex-wrap gap-3 pt-2">
-                <button type="button" onClick={() => handleConsent('granted')} className="btn-primary">
+                <button
+                  type="button"
+                  onClick={() => handleConsent('granted')}
+                  className="btn-primary"
+                  disabled={consentSubmitting}
+                >
                   Yes, celebrate it
                 </button>
-                <button type="button" onClick={() => handleConsent('declined')} className="btn-outline">
+                <button
+                  type="button"
+                  onClick={() => handleConsent('declined')}
+                  className="btn-outline"
+                  disabled={consentSubmitting}
+                >
                   No, keep it private
                 </button>
               </div>

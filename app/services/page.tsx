@@ -42,6 +42,11 @@ const serviceLinks = [
     title: 'Pharmacy',
     copy: 'Safe dispensing, adherence counselling, and enquiry-only handling for restricted medicines.'
   },
+  {
+    href: '/services/telehealth',
+    title: 'Telehealth Consultations',
+    copy: 'Secure video or phone reviews with mobile payment checkout and same-day clinician follow-up notes.'
+  },
 ]
 
 export const metadata = buildPageMetadata({

@@ -2,18 +2,6 @@
 
 import { useEffect, useState } from 'react'
 
-type Shape = {
-  id: number
-  left: number
-  delay: number
-  duration: number
-  size: number
-  color: string
-  kind: 'star' | 'balloon'
-}
-
-const COLORS = ['#60a5fa', '#38bdf8', '#facc15', '#f472b6', '#34d399']
-
 export function triggerDonationCelebration() {
   if (typeof window === 'undefined') return
   window.dispatchEvent(new Event('donation:celebrate'))
@@ -21,26 +9,33 @@ export function triggerDonationCelebration() {
 
 export default function DonationCelebration() {
   const [active, setActive] = useState(false)
-  const [shapes, setShapes] = useState<Shape[]>([])
+  const [celebrationKey, setCelebrationKey] = useState(0)
+
+  const trainSegments = [
+    {
+      icon: '🚑',
+      label: 'Emergency care funded',
+      accent: 'rgba(34, 197, 94, 0.18)'
+    },
+    {
+      icon: '💉',
+      label: 'Medicines restocked',
+      accent: 'rgba(20, 184, 166, 0.18)'
+    },
+    {
+      icon: '🌈',
+      label: 'Families out of danger',
+      accent: 'rgba(250, 204, 21, 0.22)'
+    }
+  ]
 
   useEffect(() => {
     if (typeof window === 'undefined') return
 
-    const createShapes = (): Shape[] =>
-      Array.from({ length: 28 }, (_, index) => ({
-        id: index,
-        left: Math.random() * 100,
-        delay: Math.random() * 2,
-        duration: 5.5 + Math.random() * 3,
-        size: 20 + Math.random() * 26,
-        color: COLORS[index % COLORS.length],
-        kind: index % 3 === 0 ? 'balloon' : 'star'
-      }))
-
     const handler = () => {
-      setShapes(createShapes())
+      setCelebrationKey(previous => previous + 1)
       setActive(true)
-      window.setTimeout(() => setActive(false), 6000)
+      window.setTimeout(() => setActive(false), 8000)
     }
 
     window.addEventListener('donation:celebrate', handler as EventListener)
@@ -53,26 +48,17 @@ export default function DonationCelebration() {
   if (!active) return null
 
   return (
-    <div className="celebration-overlay pointer-events-none fixed inset-0 z-[60]">
-      {shapes.map((shape) => (
-        <span
-          key={`${shape.id}-${shape.left.toFixed(2)}`}
-          className={`celebration-shape ${
-            shape.kind === 'star' ? 'celebration-star' : 'celebration-balloon'
-          }`}
-          style={{
-            left: `${shape.left}%`,
-            animationDelay: `${shape.delay}s`,
-            animationDuration: `${shape.duration}s`,
-            width: `${shape.size}px`,
-            height:
-              shape.kind === 'star'
-                ? `${shape.size}px`
-                : `${Math.round(shape.size * 1.35)}px`,
-            backgroundColor: shape.color
-          }}
-        />
-      ))}
+    <div className="celebration-overlay pointer-events-none fixed inset-0 z-[60]" aria-hidden="true">
+      <div className="celebration-track">
+        <div key={celebrationKey} className="celebration-train" role="status" aria-live="assertive">
+          {trainSegments.map(segment => (
+            <span key={segment.label} className="celebration-car" style={{ backgroundColor: segment.accent }}>
+              <span aria-hidden>{segment.icon}</span>
+              <span className="celebration-car-label">{segment.label}</span>
+            </span>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
