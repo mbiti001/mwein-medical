@@ -26,13 +26,14 @@ export default function ExitIntentSurvey() {
 	const [explanation, setExplanation] = useState('')
 	const [email, setEmail] = useState('')
 	const [status, setStatus] = useState<SubmitState>('idle')
- 	const [validationError, setValidationError] = useState(false)
+	const [validationError, setValidationError] = useState(false)
 
 	const triggeredRef = useRef(false)
 	const lastClosedRef = useRef<number>(0)
 	const focusReturnRef = useRef<HTMLElement | null>(null)
 
 	const requiresExplanation = useMemo(() => outcome !== OUTCOMES.FOUND, [outcome])
+	const isSubmitting = status === 'submitting'
 
 	const resetServerError = useCallback(() => {
 		if (status === 'server-error') {
@@ -80,6 +81,45 @@ export default function ExitIntentSurvey() {
 		setVisible(true)
 		setValidationError(false)
 	}, [visible])
+
+	const sendFeedback = useCallback(
+		async ({
+			outcome: selectedOutcome,
+			explanation: providedExplanation,
+			email: providedEmail
+		}: {
+			outcome: Outcome
+			explanation?: string
+			email?: string
+		}) => {
+			if (isSubmitting) return
+			setStatus('submitting')
+
+			try {
+				const response = await fetch('/api/feedback/exit-intent', {
+					method: 'POST',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify({
+						outcome: selectedOutcome,
+						explanation: providedExplanation?.trim() || undefined,
+						email: providedEmail?.trim() || undefined,
+						pagePath: pathname ?? '/'
+					})
+				})
+
+				if (!response.ok) {
+					throw new Error('Request failed')
+				}
+
+				setStatus('success')
+				setTimeout(() => closeSurvey('submitted'), 1200)
+			} catch (error) {
+				console.error('Exit survey submission failed', error)
+				setStatus('server-error')
+			}
+		},
+		[closeSurvey, isSubmitting, pathname]
+	)
 
 	useEffect(() => {
 		if (typeof window === 'undefined') return
@@ -179,30 +219,7 @@ export default function ExitIntentSurvey() {
 			return
 		}
 
-		setStatus('submitting')
-
-		try {
-			const response = await fetch('/api/feedback/exit-intent', {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({
-					outcome,
-					explanation: explanation.trim() || undefined,
-					email: email.trim() || undefined,
-					pagePath: pathname ?? '/'
-				})
-			})
-
-			if (!response.ok) {
-				throw new Error('Request failed')
-			}
-
-			setStatus('success')
-			setTimeout(() => closeSurvey('submitted'), 1800)
-		} catch (error) {
-			console.error('Exit survey submission failed', error)
-			setStatus('server-error')
-		}
+		await sendFeedback({ outcome, explanation, email })
 	}
 
 	if (!visible) {
@@ -261,7 +278,14 @@ export default function ExitIntentSurvey() {
 											setOutcome(choice.value)
 											setValidationError(false)
 											resetServerError()
+											if (choice.value === OUTCOMES.FOUND) {
+												setExplanation('')
+												if (!isSubmitting) {
+													void sendFeedback({ outcome: OUTCOMES.FOUND, email })
+												}
+											}
 										}}
+										disabled={isSubmitting}
 										className="sr-only"
 									/>
 									<span>{choice.label}</span>
@@ -287,21 +311,23 @@ export default function ExitIntentSurvey() {
 								/>
 							</div>
 						)}
-						<div className="exit-survey-field">
-							<label htmlFor="exit-survey-email">Leave an email if you’d like a follow-up (optional)</label>
-							<input
-								type="email"
-								id="exit-survey-email"
-								name="email"
-								value={email}
-								onChange={(event) => {
-									setEmail(event.target.value)
-									resetServerError()
-								}}
-								className="exit-survey-input"
-								placeholder="you@example.com"
-							/>
-						</div>
+						{outcome !== OUTCOMES.FOUND && (
+							<div className="exit-survey-field">
+								<label htmlFor="exit-survey-email">Leave an email if you’d like a follow-up (optional)</label>
+								<input
+									type="email"
+									id="exit-survey-email"
+									name="email"
+									value={email}
+									onChange={(event) => {
+										setEmail(event.target.value)
+										resetServerError()
+									}}
+									className="exit-survey-input"
+									placeholder="you@example.com"
+								/>
+							</div>
+						)}
 						{validationError && (
 							<p className="exit-survey-error" role="alert">
 								Please let us know what you were hoping to find so we can guide you.
@@ -312,14 +338,30 @@ export default function ExitIntentSurvey() {
 								We couldn’t save that just yet. Please try again in a moment.
 							</p>
 						)}
-						<div className="exit-survey-actions">
-							<a href="/contact" className="btn-outline">
-								Contact us
-							</a>
-							<button type="submit" className="btn-primary" disabled={status === 'submitting'}>
-								{status === 'submitting' ? 'Sending…' : 'Send feedback'}
-							</button>
-						</div>
+						{outcome !== OUTCOMES.FOUND && (
+							<div className="exit-survey-actions">
+								<a href="/contact" className="btn-outline">
+									Contact us
+								</a>
+								<button type="submit" className="btn-primary" disabled={isSubmitting}>
+									{isSubmitting ? 'Sending…' : 'Send feedback'}
+								</button>
+							</div>
+						)}
+						{outcome === OUTCOMES.FOUND && status === 'server-error' && (
+							<div className="exit-survey-actions">
+								<button
+									type="button"
+									onClick={() => {
+										setStatus('idle')
+										void sendFeedback({ outcome: OUTCOMES.FOUND, email })
+									}}
+									className="btn-primary"
+								>
+									Try again
+								</button>
+							</div>
+						)}
 						<p className="exit-survey-footnote">
 							We only use this information to improve the website experience and guide families to the right care.
 						</p>

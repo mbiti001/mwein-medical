@@ -14,8 +14,10 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Overview', roles: ['ADMIN', 'PHARMACY', 'CLINIC'] },
+  { href: '/dashboard/appointments', label: 'Requests', roles: ['ADMIN', 'CLINIC'] },
   { href: '/dashboard/orders', label: 'Orders', roles: ['ADMIN', 'PHARMACY'] },
-  { href: '/dashboard/telehealth', label: 'Telehealth', roles: ['ADMIN', 'CLINIC'] }
+  { href: '/dashboard/telehealth', label: 'Telehealth', roles: ['ADMIN', 'CLINIC'] },
+  { href: '/dashboard/feedback', label: 'Feedback', roles: ['ADMIN', 'PHARMACY', 'CLINIC'] }
 ]
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
