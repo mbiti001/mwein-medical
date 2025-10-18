@@ -71,12 +71,24 @@ export default function Services() {
               <Link href="/contact" className="btn-primary">Book an appointment</Link>
               <a href="tel:+254707711888" className="btn-outline">Call +254 707 711 888</a>
             </div>
-            <ul className="mt-6 space-y-2 text-slate-600">
-              <li>✓ SHA & Yatta insurance accepted (more partners coming soon)</li>
-              <li>✓ Full suite of family planning methods on-site (implants, IUCDs, injectables, oral options)</li>
-              <li>✓ On-site lab & pharmacy</li>
-              <li>✓ Emergency coordination every minute with on-call clinicians and partner ambulances</li>
-            </ul>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div className="contact-tile">
+                <span className="contact-tile-title">Insurance-friendly</span>
+                <p className="contact-tile-meta">SHA & Yatta accepted; our team pre-authorises before your visit.</p>
+              </div>
+              <div className="contact-tile">
+                <span className="contact-tile-title">Full family planning</span>
+                <p className="contact-tile-meta">Implants, IUCDs, injectables, counselling, and follow-ups ready daily.</p>
+              </div>
+              <div className="contact-tile">
+                <span className="contact-tile-title">On-site diagnostics</span>
+                <p className="contact-tile-meta">Laboratory, ultrasound, and pharmacy under one roof.</p>
+              </div>
+              <div className="contact-tile">
+                <span className="contact-tile-title">Emergency coordination</span>
+                <p className="contact-tile-meta">On-call clinicians and partner ambulances every minute.</p>
+              </div>
+            </div>
           </div>
           <div>
             <div className="card space-y-4">

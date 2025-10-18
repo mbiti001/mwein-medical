@@ -30,8 +30,8 @@ type FormData = z.infer<typeof schema>
 export default function ContactForm() {
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
   const defaultValues = {
-  age: '',
-  email: '',
+    age: '',
+    email: '',
     botField: '',
     visitType: 'in_person',
     gender: 'female'
@@ -69,83 +69,102 @@ export default function ContactForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="max-w-lg space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
       <div className="hidden" aria-hidden>
-        <label>Leave this field empty</label>
+        <label className="form-label">Leave this field empty</label>
         <input type="text" tabIndex={-1} autoComplete="off" {...register('botField')} />
       </div>
-      <div>
-        <label className="block mb-1 text-sm font-medium">Name</label>
-        <input className="mt-1 block w-full border rounded px-3 py-2" {...register('name')} />
-        {errors.name && <p className="text-sm text-red-600">{errors.name.message}</p>}
-      </div>
 
-      <div>
-        <label className="block mb-1 text-sm font-medium">Phone</label>
-        <input className="mt-1 block w-full border rounded px-3 py-2" {...register('phone')} />
-        {errors.phone && <p className="text-sm text-red-600">{errors.phone.message}</p>}
-      </div>
-
-      <div>
-        <label className="block mb-1 text-sm font-medium">Email (optional)</label>
-        <input className="mt-1 block w-full border rounded px-3 py-2" {...register('email')} />
-        {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
-      </div>
-
-      <div className="grid md:grid-cols-3 gap-3">
-        <div>
-          <label className="block mb-1 text-sm font-medium">Age</label>
-          <input type="number" min="0" max="120" className="mt-1 block w-full border rounded px-3 py-2" {...register('age')} />
-          {errors.age && <p className="text-sm text-red-600">{errors.age.message}</p>}
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div className="form-field">
+          <label className="form-label" htmlFor="contact-name">Name</label>
+          <input id="contact-name" className="form-input" aria-invalid={Boolean(errors.name)} {...register('name')} />
+          {errors.name && <p className="form-error">{errors.name.message}</p>}
         </div>
-        <div>
-          <label className="block mb-1 text-sm font-medium">Gender</label>
-          <select className="mt-1 block w-full border rounded px-3 py-2" {...register('gender')}>
+        <div className="form-field">
+          <label className="form-label" htmlFor="contact-phone">Phone</label>
+          <input id="contact-phone" className="form-input" aria-invalid={Boolean(errors.phone)} {...register('phone')} />
+          {errors.phone && <p className="form-error">{errors.phone.message}</p>}
+        </div>
+      </div>
+
+      <div className="form-field">
+        <label className="form-label" htmlFor="contact-email">Email (optional)</label>
+        <input id="contact-email" className="form-input" aria-invalid={Boolean(errors.email)} {...register('email')} />
+        {errors.email && <p className="form-error">{errors.email.message}</p>}
+      </div>
+
+      <div className="grid gap-5 sm:grid-cols-3">
+        <div className="form-field">
+          <label className="form-label" htmlFor="contact-age">Age</label>
+          <input
+            id="contact-age"
+            type="number"
+            min="0"
+            max="120"
+            inputMode="numeric"
+            className="form-input"
+            aria-invalid={Boolean(errors.age)}
+            {...register('age')}
+          />
+          {errors.age && <p className="form-error">{errors.age.message}</p>}
+        </div>
+        <div className="form-field">
+          <label className="form-label" htmlFor="contact-gender">Gender</label>
+          <select id="contact-gender" className="form-select" aria-invalid={Boolean(errors.gender)} {...register('gender')}>
             <option value="female">Female</option>
             <option value="male">Male</option>
             <option value="non_binary">Non-binary</option>
             <option value="prefer_not_to_say">Prefer not to say</option>
           </select>
-          {errors.gender && <p className="text-sm text-red-600">{errors.gender.message}</p>}
+          {errors.gender && <p className="form-error">{errors.gender.message}</p>}
         </div>
-        <div>
-          <label className="block mb-1 text-sm font-medium">Consultation type</label>
-          <select className="mt-1 block w-full border rounded px-3 py-2" {...register('visitType')}>
+        <div className="form-field">
+          <label className="form-label" htmlFor="contact-visitType">Consultation type</label>
+          <select id="contact-visitType" className="form-select" aria-invalid={Boolean(errors.visitType)} {...register('visitType')}>
             <option value="in_person">In-person at the clinic</option>
             <option value="telehealth">Telehealth (video/phone)</option>
           </select>
-          {errors.visitType && <p className="text-sm text-red-600">{errors.visitType.message}</p>}
+          {errors.visitType && <p className="form-error">{errors.visitType.message}</p>}
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-3">
-        <div>
-          <label className="block mb-1 text-sm font-medium">Preferred date</label>
-          <input type="date" className="mt-1 block w-full border rounded px-3 py-2" {...register('preferredDate')} />
-          {errors.preferredDate && <p className="text-sm text-red-600">{errors.preferredDate.message}</p>}
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div className="form-field">
+          <label className="form-label" htmlFor="contact-preferredDate">Preferred date</label>
+          <input id="contact-preferredDate" type="date" className="form-input" aria-invalid={Boolean(errors.preferredDate)} {...register('preferredDate')} />
+          {errors.preferredDate && <p className="form-error">{errors.preferredDate.message}</p>}
         </div>
-        <div>
-          <label className="block mb-1 text-sm font-medium">Preferred time</label>
-          <input type="time" className="mt-1 block w-full border rounded px-3 py-2" {...register('preferredTime')} />
-          {errors.preferredTime && <p className="text-sm text-red-600">{errors.preferredTime.message}</p>}
+        <div className="form-field">
+          <label className="form-label" htmlFor="contact-preferredTime">Preferred time</label>
+          <input id="contact-preferredTime" type="time" className="form-input" aria-invalid={Boolean(errors.preferredTime)} {...register('preferredTime')} />
+          {errors.preferredTime && <p className="form-error">{errors.preferredTime.message}</p>}
         </div>
       </div>
 
-      <div>
-        <label className="block mb-1 text-sm font-medium">Reason for visit</label>
-        <textarea rows={4} className="mt-1 block w-full border rounded px-3 py-2" {...register('reason')} />
-        {errors.reason && <p className="text-sm text-red-600">{errors.reason.message}</p>}
+      <div className="form-field">
+        <label className="form-label" htmlFor="contact-reason">Reason for visit</label>
+        <textarea id="contact-reason" className="form-textarea" aria-invalid={Boolean(errors.reason)} {...register('reason')} />
+        {errors.reason && <p className="form-error">{errors.reason.message}</p>}
       </div>
 
-      <button type="submit" className="btn-primary" disabled={status === 'sending'}>
-        {status === 'sending' ? 'Sending…' : 'Submit request'}
-      </button>
-
-  {status === 'success' && <p className="text-sm text-green-600">Thanks! We’ll reach out shortly.</p>}
-      {status === 'error' && <p className="text-sm text-red-600">Something went wrong. Please try again or call us directly.</p>}
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="submit" className="btn-primary" disabled={status === 'sending'}>
+          {status === 'sending' ? 'Sending…' : 'Submit request'}
+        </button>
+        <span
+          role="status"
+          aria-live="polite"
+          className={`text-sm ${status === 'success' ? 'text-green-600' : status === 'error' ? 'text-red-600' : 'text-slate-500'}`}
+        >
+          {status === 'success' && 'Thanks! We’ll reach out shortly.'}
+          {status === 'error' && 'Something went wrong. Please try again or call us directly.'}
+          {status === 'sending' && 'Sending your request…'}
+        </span>
+      </div>
 
       {visitType === 'telehealth' && (
-        <p className="text-xs text-slate-500">
+        <p className="form-hint">
           Telehealth slots require payment confirmation and the clinical details listed above. Include your preferred video platform in the notes if applicable.
         </p>
       )}

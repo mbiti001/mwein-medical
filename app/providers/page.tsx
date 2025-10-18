@@ -56,12 +56,24 @@ export default function Providers() {
               Our resident clinical officers and nurses work together under local arrangements so you always meet a familiar face.
               Every visit is scheduled ahead to match the right clinician with your needs while keeping emergency support ready every minute.
             </p>
-            <ul className="text-sm text-slate-600 space-y-2">
-              <li>• Local clinicians rooted in Busia County communities</li>
-              <li>• Appointment-based scheduling for focused reviews</li>
-              <li>• Family planning counselling, insertions, and follow-ups delivered by certified nurses</li>
-              <li>• Minute-by-minute emergency coordination across Busia County facilities</li>
-            </ul>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div className="contact-tile">
+                <span className="contact-tile-title">Local expertise</span>
+                <p className="contact-tile-meta">Clinicians rooted in Busia County communities.</p>
+              </div>
+              <div className="contact-tile">
+                <span className="contact-tile-title">Focused reviews</span>
+                <p className="contact-tile-meta">Appointment-based slots tailored to your needs.</p>
+              </div>
+              <div className="contact-tile">
+                <span className="contact-tile-title">Certified family planning</span>
+                <p className="contact-tile-meta">Counselling, insertions, and follow-ups by specialists.</p>
+              </div>
+              <div className="contact-tile">
+                <span className="contact-tile-title">Emergency coordination</span>
+                <p className="contact-tile-meta">Minute-by-minute handoffs across Busia County.</p>
+              </div>
+            </div>
           </div>
           <div>
             <div className="card space-y-3">

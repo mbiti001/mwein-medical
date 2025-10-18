@@ -16,7 +16,7 @@ export default function Shop() {
   return (
     <>
       <section className="section-spacing rounded-3xl bg-gradient-to-r from-white via-slate-50 to-sky-50 shadow-inset mb-12">
-        <div className="grid md:grid-cols-[1.2fr_1fr] gap-10 items-center">
+        <div className="grid md:grid-cols-[1.2fr_1fr] gap-10 items-start">
           <div>
             <span className="badge mb-4">Clinic Shop</span>
             <h1>Order clinic-approved essentials</h1>
@@ -27,11 +27,24 @@ export default function Shop() {
               <a href="https://wa.me/254707711888?text=Hello%20Mwein%2C%20I%20would%20like%20to%20order" className="btn-primary">WhatsApp order</a>
               <Link href="/cart" className="btn-outline">View cart</Link>
             </div>
-            <ul className="mt-6 text-sm text-slate-600 space-y-2">
-              <li>• Pay on collection (cash, M-Pesa Till 8121096) or request delivery rider.</li>
-              <li>• Licensed pharmacy team verifies every prescription enquiry before dispatch.</li>
-              <li>• Need help choosing a device? Call <a className="underline" href="tel:+254707711888">+254 707 711 888</a>.</li>
-            </ul>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div className="contact-tile">
+                <span className="contact-tile-title">Flexible payments</span>
+                <p className="contact-tile-meta">Pay on collection or via M-Pesa Till 8121096.</p>
+              </div>
+              <div className="contact-tile">
+                <span className="contact-tile-title">Pharmacist verified</span>
+                <p className="contact-tile-meta">Licenced team checks every prescription-only enquiry.</p>
+              </div>
+              <div className="contact-tile">
+                <span className="contact-tile-title">Same-day delivery</span>
+                <p className="contact-tile-meta">Riders available within Mungatsi and Busia County.</p>
+              </div>
+              <div className="contact-tile">
+                <span className="contact-tile-title">Need device advice?</span>
+                <p className="contact-tile-meta">Call <a className="underline" href="tel:+254707711888">+254 707 711 888</a> for guidance.</p>
+              </div>
+            </div>
           </div>
           <div>
             <div className="card space-y-3">
