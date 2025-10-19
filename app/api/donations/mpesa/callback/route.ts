@@ -10,7 +10,7 @@ import { env } from '../../../../../lib/env'
 const CALLBACK_SECRET_HEADER = 'x-mpesa-callback-secret'
 
 export async function POST(request: Request) {
-  const expectedSecret = env.mpesa.callbackSecret?.trim()
+  const expectedSecret = process.env.MPESA_CALLBACK_SECRET?.trim()
   if (expectedSecret) {
     const provided = request.headers.get(CALLBACK_SECRET_HEADER) || request.headers.get('X-Mpesa-Callback-Secret')
     if (!provided || provided !== expectedSecret) {
