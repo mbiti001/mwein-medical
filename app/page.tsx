@@ -56,7 +56,7 @@ export default function Home() {
           <div className="space-y-6">
             <span className="badge">24/7 community clinic</span>
             <div className="space-y-4">
-              <h1 className="max-w-2xl">Whole-family care without leaving Mungatsi</h1>
+              <h1 className="max-w-2xl">Exceptional care close to you</h1>
               <p className="text-lg text-slate-600 max-w-2xl">
                 Mwein Medical Services keeps emergencies, chronic clinics, maternal journeys, and diagnostics under one roof. Walk in anytime or book ahead—we’ll coordinate everything before you arrive.
               </p>
