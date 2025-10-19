@@ -16,7 +16,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, skipped: 'build-phase' })
     }
 
-    if (!env.adminSessionSecret) {
+    if (!env.ADMIN_SESSION_SECRET) {
       console.error('Admin login blocked: ADMIN_SESSION_SECRET is missing')
       return NextResponse.json({ error: 'server-misconfigured' }, { status: 500 })
     }
