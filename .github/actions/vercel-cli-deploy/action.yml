@@ -1,0 +1,89 @@
+name: Vercel CLI deploy
+description: Link project, pull env vars, run Prisma migrations, build, and deploy via the Vercel CLI.
+inputs:
+  vercel-token:
+    description: Vercel access token with deploy permissions.
+    required: true
+  vercel-project-id:
+    description: Unique Vercel project identifier.
+    required: true
+  vercel-team-id:
+    description: Optional Vercel team scope. Leave blank for personal projects.
+    required: false
+  working-directory:
+    description: Directory containing the Next.js app.
+    required: false
+    default: .
+outputs:
+  url:
+    description: Production deployment URL returned by the Vercel CLI.
+    value: ${{ steps.deploy.outputs.url }}
+runs:
+  using: composite
+  steps:
+    - name: Link Vercel project
+      shell: bash
+      run: |
+        set -euo pipefail
+        cd "${{ inputs.working-directory }}"
+        TEAM_FLAG=""
+        if [ -n "${{ inputs.vercel-team-id }}" ]; then
+          TEAM_FLAG="--scope \"${{ inputs.vercel-team-id }}\""
+        fi
+        npx vercel link --yes \
+          $TEAM_FLAG \
+          --project "${{ inputs.vercel-project-id }}" \
+          --token "${{ inputs.vercel-token }}"
+
+    - name: Pull production env file
+      shell: bash
+      run: |
+        set -euo pipefail
+        cd "${{ inputs.working-directory }}"
+        TEAM_FLAG=""
+        if [ -n "${{ inputs.vercel-team-id }}" ]; then
+          TEAM_FLAG="--scope \"${{ inputs.vercel-team-id }}\""
+        fi
+        npx vercel env pull .env.production.local \
+          $TEAM_FLAG \
+          --environment=production \
+          --token "${{ inputs.vercel-token }}"
+
+    - name: Apply Prisma migrations
+      shell: bash
+      run: |
+        set -euo pipefail
+        cd "${{ inputs.working-directory }}"
+        set -o allexport
+        source .env.production.local
+        set +o allexport
+        npx prisma generate
+        npx prisma migrate deploy
+
+    - name: Build application
+      shell: bash
+      run: |
+        set -euo pipefail
+        cd "${{ inputs.working-directory }}"
+        TEAM_FLAG=""
+        if [ -n "${{ inputs.vercel-team-id }}" ]; then
+          TEAM_FLAG="--scope \"${{ inputs.vercel-team-id }}\""
+        fi
+        npx vercel build --prod \
+          $TEAM_FLAG \
+          --token "${{ inputs.vercel-token }}"
+
+    - name: Deploy prebuilt output
+      id: deploy
+      shell: bash
+      run: |
+        set -euo pipefail
+        cd "${{ inputs.working-directory }}"
+        TEAM_FLAG=""
+        if [ -n "${{ inputs.vercel-team-id }}" ]; then
+          TEAM_FLAG="--scope \"${{ inputs.vercel-team-id }}\""
+        fi
+        URL=$(npx vercel deploy --prebuilt --prod \
+          $TEAM_FLAG \
+          --token "${{ inputs.vercel-token }}")
+        echo "url=$URL" >> "$GITHUB_OUTPUT"

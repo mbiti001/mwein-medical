@@ -12,12 +12,6 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      # Optional if your project is under a Team:
-      VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -29,44 +23,14 @@ jobs:
       - name: Install deps
         run: npm ci
 
-      - name: Vercel project link
-        run: |
-          npx vercel link --yes \
-            ${VERCEL_TEAM_ID:+--scope "$VERCEL_TEAM_ID"} \
-            --project "$VERCEL_PROJECT_ID" \
-            --token "$VERCEL_TOKEN"
-
-      - name: Pull env (production) to file
-        run: |
-          npx vercel env pull .env.production.local \
-            ${VERCEL_TEAM_ID:+--scope "$VERCEL_TEAM_ID"} \
-            --environment=production \
-            --token "$VERCEL_TOKEN"
-
-      - name: Apply Prisma migrations (production DB)
-        # why: ensure schema is up-to-date before we build & ship
-        run: |
-          set -e
-          set -o allexport
-          source .env.production.local
-          set +o allexport
-          npx prisma generate
-          npx prisma migrate deploy
-
-      - name: Build application (uses pulled env)
-        run: |
-          npx vercel build --prod \
-            ${VERCEL_TEAM_ID:+--scope "$VERCEL_TEAM_ID"} \
-            --token "$VERCEL_TOKEN"
-
-      - name: Deploy prebuilt output
-        id: deploy
-        run: |
-          URL=$(npx vercel deploy --prebuilt --prod \
-            ${VERCEL_TEAM_ID:+--scope "$VERCEL_TEAM_ID"} \
-            --token "$VERCEL_TOKEN")
-          echo "url=$URL" >> "$GITHUB_OUTPUT"
+      - name: Build & deploy via Vercel CLI
+        id: vercel
+        uses: ./.github/actions/vercel-cli-deploy
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-team-id: ${{ secrets.VERCEL_TEAM_ID }}
 
       - name: Echo deploy URL
         run: |
-          echo "Deployed: ${{ steps.deploy.outputs.url }}"
+          echo "Deployed: ${{ steps.vercel.outputs.url }}"

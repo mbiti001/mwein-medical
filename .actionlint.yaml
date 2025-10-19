@@ -1,0 +1,6 @@
+# Known GitHub Actions secrets so actionlint doesn't flag legitimate references
+secrets:
+  - VERCEL_TOKEN
+  - VERCEL_ORG_ID
+  - VERCEL_PROJECT_ID
+  - VERCEL_TEAM_ID
