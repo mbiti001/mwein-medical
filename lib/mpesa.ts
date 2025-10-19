@@ -93,7 +93,13 @@ export type MpesaCallbackPayload = {
 }
 
 function ensureConfig() {
-  const { consumerKey, consumerSecret, passkey, shortCode, callbackUrl, environment } = env.mpesa
+  const consumerKey = process.env.MPESA_CONSUMER_KEY
+  const consumerSecret = process.env.MPESA_CONSUMER_SECRET  
+  const passkey = process.env.MPESA_PASSKEY
+  const shortCode = process.env.MPESA_SHORT_CODE
+  const callbackUrl = process.env.MPESA_CALLBACK_URL
+  const environment = process.env.MPESA_ENVIRONMENT || 'sandbox'
+  
   if (!consumerKey || !consumerSecret || !passkey || !shortCode) {
     throw new MpesaConfigurationError('Missing MPesa Daraja credentials. Set MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET, MPESA_PASSKEY, and MPESA_SHORT_CODE.')
   }
