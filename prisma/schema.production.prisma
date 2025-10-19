@@ -1,0 +1,107 @@
+// Production Prisma Schema
+// This is a production-ready version that supports PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = env("DATABASE_PROVIDER")
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique
+  name      String?
+  role      String   @default("USER")
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model AppointmentRequest {
+  id               String    @id @default(uuid()) @db.Uuid
+  name             String
+  phone            String
+  email            String?
+  preferredDate    String
+  preferredTime    String
+  reason           String
+  patientAge       Int?
+  patientGender    String?
+  consultationType String    @default("IN_PERSON")
+  consultationDate DateTime?
+  status           String    @default("NEW")
+  identifier       String?
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([status, createdAt])
+  @@index([identifier])
+  @@index([consultationType, consultationDate])
+  @@index([phone])
+  @@index([email])
+  @@index([name])
+  @@map("appointment_requests")
+}
+
+model ExitFeedback {
+  id          String   @id @default(uuid()) @db.Uuid
+  outcome     String
+  explanation String?
+  email       String?
+  pagePath    String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([outcome])
+  @@map("exit_feedback")
+}
+
+model SiteMetric {
+  key       String   @id
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@map("site_metrics")
+}
+
+model Order {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String?   @db.Uuid
+  items       String    // JSON stringified array
+  total       Float
+  status      String    @default("PENDING")
+  paymentId   String?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, createdAt])
+  @@index([userId])
+  @@map("orders")
+}
+
+model Donation {
+  id          String    @id @default(uuid()) @db.Uuid
+  amount      Float
+  currency    String    @default("KES")
+  donorEmail  String?
+  donorName   String?
+  message     String?
+  paymentId   String?
+  status      String    @default("PENDING")
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, createdAt])
+  @@index([donorEmail])
+  @@map("donations")
+}
