@@ -1,5 +1,6 @@
 // lib/middleware/apiMiddleware.ts
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { logger, getRequestContext } from '../logger';
 import { generateRequestId, handleApiError } from '../apiResponse';
 
@@ -67,8 +68,8 @@ export function withApiHandler<T extends unknown[]>(
 
 // Validation middleware
 export function withValidation<T>(
-  schema: { safeParse: (data: unknown) => { success: boolean; data?: T; error?: any } },
-  handler: (request: NextRequest, context: ApiContext, validatedData: T) => Promise<NextResponse>
+  schema: z.ZodSchema<T>,
+  handler: (request: NextRequest, context: any, validatedData: T) => Promise<NextResponse> // eslint-disable-line @typescript-eslint/no-explicit-any
 ) {
   return withApiHandler(async (request: NextRequest, context: ApiContext) => {
     let body: unknown;

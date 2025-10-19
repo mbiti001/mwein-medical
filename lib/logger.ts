@@ -65,6 +65,7 @@ class Logger {
     console.log(`${timestamp} ${prefix} ${entry.message}`);
     
     if (Object.keys(entry).length > 3) { // More than level, message, timestamp
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { level, message, timestamp, ...context } = entry;
       console.log('Context:', context);
     }
