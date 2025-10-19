@@ -32,8 +32,9 @@ export async function POST(request: Request) {
     const result = await processMpesaCallback(payload)
     return NextResponse.json({
       ok: true,
-      status: result.transaction.status,
-      supporterId: result.transaction.supporterId ?? null
+      status: result.payment.status,
+      paymentId: result.payment.id,
+      donationId: result.donation?.id ?? null
     })
   } catch (error) {
     if (error instanceof MpesaCallbackError) {

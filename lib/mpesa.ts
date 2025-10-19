@@ -216,7 +216,9 @@ export async function initiateMpesaDonation(input: InitiateMpesaDonationInput): 
     data: {
       phoneE164: normalizedPhone,
       amountCents,
-      status: 'PENDING'
+      status: 'PENDING',
+      merchantRequestId: 'pending-' + Date.now(),
+      checkoutRequestId: 'pending-' + Date.now()
     }
   })
 
