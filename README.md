@@ -15,6 +15,8 @@
 
 	If you would like the mental health assistant to produce personalised supportive messages, add `OPENAI_API_KEY` (and optionally `OPENAI_MODEL`) to your environment. Without these, the assistant still runs locally with reassuring defaults and never stores PHQ-9 responses.
 
+	Set `NEXT_PUBLIC_SITE_URL` (or `SITE_URL`) to the domain you deploy—admin password reset emails use this value to generate the magic link for `mweinmedical@gmail.com`. Without SMTP configured the message is logged to the terminal so you can copy the link manually during local development.
+
 2. If you stay on the bundled SQLite database, nothing else is required—`lib/prisma.ts` points to `file:./prisma/dev.db` by default when `DATABASE_URL` is missing.
 
 3. To use PostgreSQL (or another provider) instead:
@@ -85,8 +87,16 @@ When SMTP is configured you should receive an email at `CONTACT_EMAIL`; otherwis
 	- `ADMIN` sees everything.
 	- `PHARMACY` can manage orders.
 	- `CLINIC` can review telehealth submissions.
+- If an admin forgets their password, use the **Forgot password?** link on the login form (or go directly to `/forgot-password`). The site emails `mweinmedical@gmail.com` a reset link that expires after 30 minutes and is safe for browser password managers thanks to the standard `email` and `new-password` field hints.
 - Orders submitted through the shop appear in **Dashboard → Orders** where you can update status, add staff notes, and track fulfilment history. Telehealth submissions remain accessible via the dedicated telehealth dashboard.
 - Admin sessions expire after six hours; signing out clears the cookie immediately.
+
+## Accountability & antifraud desk
+
+- `/antifraud` lets patients or partners submit confidential reports when cash or M-Pesa transfers are routed to a personal phone number instead of the clinic till.
+- Submissions are rate-limited, protected by the same honeypot as the contact form, and stored in the new `AntifraudReport` table for follow-up.
+- Each report emails `mweinmedical@gmail.com` with the amount, staff member, date, stated reason, and evidence summary so the admin can cross-check whether the payment reached official accounts.
+- Reporters may stay anonymous, but encouraging them to leave contact info helps the clinic close the loop quickly.
 
 ## Order notifications
 
@@ -113,6 +123,7 @@ When SMTP is configured you should receive an email at `CONTACT_EMAIL`; otherwis
 
 - `components/DonationRail.tsx` renders a right-to-left ticker showcasing recent supporters. Pass it an array of `{ id, who, amount, message, time }` entries; the component will duplicate cars automatically so the loop never stutters.
 - The ticker is embedded in `DonateExperience` alongside live supporter stats. Public supporters pulled from `/api/donations/supporters` are transformed into rail items, and the list refreshes every minute so new gifts appear without a manual reload.
+- `components/DonationSnake.tsx` powers the snaking gratitude trail on the homepage. It fetches the same supporters API, falls back to tasteful placeholders, and highlights that all fee waivers are screened and logged inside the clinic for accountability.
 - To reuse the rail elsewhere, import the component and feed it the supporters you want to highlight:
 
 	```tsx

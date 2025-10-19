@@ -6,7 +6,7 @@ import { Check, Copy, Gift, HeartHandshake, PartyPopper } from 'lucide-react'
 import DonationRail, { type DonationItem as DonationRailItem } from './DonationRail'
 import { triggerDonationCelebration } from './DonationCelebration'
 
-const MPESA_TILL = '8121096'
+const MPESA_TILL = process.env.NEXT_PUBLIC_MPESA_TILL ?? '8121096'
 const VISITOR_SESSION_KEY = 'mwein-donation-visitor-counted'
 
 type Channel = 'M-Pesa' | 'PayPal' | 'Cash/Other'
@@ -52,7 +52,11 @@ type FormState = {
   firstName: string
   amount: string
   channel: Channel
+  phone: string
 }
+
+type MpesaStage = 'idle' | 'initiating' | 'pending' | 'success' | 'failed'
+type MpesaTransactionStatus = 'PENDING' | 'SUCCESS' | 'FAILED'
 
 const currencyFormatter = new Intl.NumberFormat('en-KE', {
   style: 'currency',
@@ -74,6 +78,15 @@ const longDateFormatter = new Intl.DateTimeFormat('en-KE', {
 
 const formatAmount = (amount: number) => currencyFormatter.format(Math.round(amount))
 const formatTrendDate = (date: string) => shortDateFormatter.format(new Date(`${date}T00:00:00Z`))
+const maskPhoneNumber = (value: string) => {
+  const digits = value.replace(/\D/g, '')
+  if (digits.length >= 9) {
+    const local = digits.slice(-9)
+    const formatted = `0${local}`.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3')
+    return formatted
+  }
+  return value
+}
 const formatRelativeTimeLabel = (isoString: string | null) => {
   if (!isoString) return null
   const parsed = new Date(isoString)
@@ -110,7 +123,11 @@ export default function DonateExperience() {
   const [hoveredTrendIndex, setHoveredTrendIndex] = useState<number | null>(null)
   const [selectedTrendIndex, setSelectedTrendIndex] = useState<number | null>(null)
   const [pendingShare, setPendingShare] = useState<PendingShare | null>(null)
-  const [formValues, setFormValues] = useState<FormState>({ firstName: '', amount: '', channel: 'M-Pesa' })
+  const [formValues, setFormValues] = useState<FormState>({ firstName: '', amount: '', channel: 'M-Pesa', phone: '' })
+  const [mpesaStage, setMpesaStage] = useState<MpesaStage>('idle')
+  const [mpesaTransactionId, setMpesaTransactionId] = useState<string | null>(null)
+  const [mpesaError, setMpesaError] = useState<string | null>(null)
+  const [mpesaReceipt, setMpesaReceipt] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const [visitorCount, setVisitorCount] = useState<number | null>(null)
   const [hasCountedVisitor, setHasCountedVisitor] = useState(false)
@@ -123,6 +140,36 @@ export default function DonateExperience() {
   const [consentSubmitting, setConsentSubmitting] = useState(false)
   const logSectionRef = useRef<HTMLDivElement | null>(null)
   const ackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const mpesaStartRef = useRef<number | null>(null)
+  const mpesaPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const clearMpesaPolling = useCallback(() => {
+    if (mpesaPollRef.current) {
+      clearInterval(mpesaPollRef.current)
+      mpesaPollRef.current = null
+    }
+  }, [])
+
+  const resetMpesaState = useCallback(
+    (options: { preservePhone?: boolean } = {}) => {
+      clearMpesaPolling()
+      mpesaStartRef.current = null
+      setMpesaStage('idle')
+      setMpesaTransactionId(null)
+      setMpesaError(null)
+      setMpesaReceipt(null)
+      if (!options.preservePhone) {
+        setFormValues(prev => ({ ...prev, phone: '' }))
+      }
+    },
+    [clearMpesaPolling]
+  )
+
+  const resetDonationForm = useCallback(() => {
+    setFormValues({ firstName: '', amount: '', channel: 'M-Pesa', phone: '' })
+    setFormError(null)
+    resetMpesaState({ preservePhone: false })
+  }, [resetMpesaState])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -226,6 +273,8 @@ export default function DonateExperience() {
       }
     }
   }, [])
+
+  useEffect(() => () => clearMpesaPolling(), [clearMpesaPolling])
 
   const publicSupporters = useMemo(() => supporters.filter(entry => entry.publicAcknowledgement), [supporters])
   const latestPublic = useMemo(() => publicSupporters.slice(0, 6), [publicSupporters])
@@ -340,6 +389,19 @@ export default function DonateExperience() {
       }
     : null
 
+  const isMpesaChannel = formValues.channel === 'M-Pesa'
+  const disableFormInputs = submitting || (isMpesaChannel && mpesaStage === 'pending')
+  const submitButtonDisabled = submitting || (isMpesaChannel && (mpesaStage === 'initiating' || mpesaStage === 'pending'))
+  const submitButtonLabel = isMpesaChannel
+    ? mpesaStage === 'initiating'
+      ? 'Contacting M-Pesa…'
+      : mpesaStage === 'pending'
+        ? 'Awaiting phone approval…'
+        : 'Send M-Pesa request'
+    : submitting
+      ? 'Logging…'
+      : 'Log my donation'
+
   const setTimedAcknowledgement = (message: string, duration = 7000) => {
     setAcknowledgement(message)
     if (ackTimeoutRef.current) {
@@ -349,6 +411,7 @@ export default function DonateExperience() {
   }
 
   const promptLog = (channel: Channel) => {
+    resetMpesaState({ preservePhone: channel === 'M-Pesa' })
     setFormValues(prev => ({ ...prev, channel }))
     setFormError(null)
     setTimedAcknowledgement('Let us thank you properly—add your first name and gift below.')
@@ -414,6 +477,75 @@ export default function DonateExperience() {
 
     setSubmitting(true)
     setConsentError(null)
+
+    if (formValues.channel === 'M-Pesa') {
+      const phone = formValues.phone.trim()
+      if (!phone) {
+        setFormError('Enter the Safaricom phone number that will approve the donation.')
+        setSubmitting(false)
+        return
+      }
+
+      clearMpesaPolling()
+      setMpesaError(null)
+      setMpesaReceipt(null)
+      setMpesaStage('initiating')
+      setPendingShare(null)
+
+      try {
+        const response = await fetch('/api/donations/mpesa/initiate', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            firstName: trimmedName,
+            amount: contributionAmount,
+            phone,
+            accountReference: trimmedName
+          })
+        })
+
+        if (!response.ok) {
+          const details = await response.json().catch(() => null)
+          if (response.status === 400 && details?.error === 'invalid-phone') {
+            setFormError(details.message ?? 'Enter a valid Kenyan phone number for M-Pesa.')
+          } else if (details?.message) {
+            setFormError(details.message)
+          } else {
+            setFormError('We could not reach M-Pesa right now. Please try again shortly.')
+          }
+          setMpesaStage('failed')
+          setSubmitting(false)
+          return
+        }
+
+        const payload: { transaction?: { transactionId?: string | null } } = await response.json()
+        const transactionId = payload.transaction?.transactionId
+        if (!transactionId) {
+          setFormError('We could not create the M-Pesa request. Please try again.')
+          setMpesaStage('failed')
+          setSubmitting(false)
+          return
+        }
+
+        setMpesaTransactionId(transactionId)
+        mpesaStartRef.current = Date.now()
+        setMpesaStage('pending')
+        setTimedAcknowledgement(
+          `Approve the prompt on ${maskPhoneNumber(phone)} to complete your donation.`
+        )
+        setFormError(null)
+      } catch (error) {
+        console.error('Unable to initiate MPesa donation', error)
+        setFormError('We could not reach M-Pesa right now. Please try again shortly.')
+        setMpesaStage('failed')
+      } finally {
+        setSubmitting(false)
+      }
+
+      return
+    }
+
+    resetMpesaState({ preservePhone: false })
 
     try {
       const response = await fetch('/api/donations/supporters', {
@@ -508,6 +640,113 @@ export default function DonateExperience() {
       setConsentSubmitting(false)
     }
   }
+
+  useEffect(() => {
+    if (mpesaStage !== 'pending' || !mpesaTransactionId) {
+      return
+    }
+
+    let cancelled = false
+
+    const poll = async () => {
+      if (cancelled) {
+        return
+      }
+
+      const startedAt = mpesaStartRef.current
+      if (startedAt && Date.now() - startedAt > 180000) {
+        clearMpesaPolling()
+        setMpesaStage('failed')
+        setMpesaError('We did not receive confirmation in time. Please try again to resend the M-Pesa prompt.')
+        setMpesaTransactionId(null)
+        mpesaStartRef.current = null
+        return
+      }
+
+      try {
+        const response = await fetch(`/api/donations/mpesa/status/${mpesaTransactionId}`, {
+          headers: { 'cache-control': 'no-store' }
+        })
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            clearMpesaPolling()
+            setMpesaStage('failed')
+            setMpesaError('We could not locate that donation attempt. Please try again.')
+            setMpesaTransactionId(null)
+            mpesaStartRef.current = null
+          }
+          return
+        }
+
+        const payload: {
+          transaction: {
+            status: MpesaTransactionStatus
+            failureReason?: string | null
+            supporterId?: string | null
+            mpesaReceiptNumber?: string | null
+            totals?: SupporterTotals
+            recentNewSupporters?: SupporterTrendPoint[]
+            firstName: string
+            amount: number
+          }
+        } = await response.json()
+
+        const transaction = payload.transaction
+
+        if (transaction.status === 'SUCCESS') {
+          clearMpesaPolling()
+          setMpesaError(null)
+          setMpesaReceipt(transaction.mpesaReceiptNumber ?? null)
+          setTimedAcknowledgement(`Thank you, ${transaction.firstName}! Your M-Pesa gift is already powering emergency care.`)
+          triggerDonationCelebration()
+          if (transaction.supporterId) {
+            setPendingShare({
+              supporterId: transaction.supporterId,
+              firstName: transaction.firstName,
+              amount: transaction.amount
+            })
+          }
+          if (transaction.totals) {
+            setSupporterTotals(transaction.totals)
+          }
+          if (transaction.recentNewSupporters) {
+            setSupporterTrend(transaction.recentNewSupporters)
+          }
+          await loadSupporters(undefined, true)
+          setFormValues(prev => ({ ...prev, firstName: '', amount: '', channel: 'M-Pesa' }))
+          setMpesaTransactionId(null)
+          setMpesaStage('idle')
+          mpesaStartRef.current = null
+          return
+        }
+
+        if (transaction.status === 'FAILED') {
+          clearMpesaPolling()
+          setMpesaStage('failed')
+          setMpesaReceipt(null)
+          setMpesaError(transaction.failureReason ?? 'The M-Pesa request was cancelled or timed out. Please try again.')
+          setMpesaTransactionId(null)
+          mpesaStartRef.current = null
+          return
+        }
+      } catch (error) {
+        console.error('Unable to poll MPesa transaction status', error)
+      }
+    }
+
+    poll()
+    const interval = setInterval(poll, 4000)
+    mpesaPollRef.current = interval
+
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+      if (mpesaPollRef.current === interval) {
+        mpesaPollRef.current = null
+      }
+    }
+  }, [mpesaStage, mpesaTransactionId, clearMpesaPolling, loadSupporters])
 
   const copyTillNumber = async () => {
     try {
@@ -874,6 +1113,7 @@ export default function DonateExperience() {
                   onChange={event => setFormValues(prev => ({ ...prev, firstName: event.target.value }))}
                   className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   placeholder="e.g. Amina"
+                  disabled={disableFormInputs}
                   required
                 />
               </label>
@@ -888,15 +1128,38 @@ export default function DonateExperience() {
                   onChange={event => setFormValues(prev => ({ ...prev, amount: event.target.value }))}
                   className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                   placeholder="e.g. 1000"
+                  disabled={disableFormInputs}
                   required
                 />
               </label>
+              {isMpesaChannel && (
+                <label className="sm:col-span-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Safaricom phone</span>
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    value={formValues.phone}
+                    onChange={event => setFormValues(prev => ({ ...prev, phone: event.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    placeholder="07xx xxx xxx"
+                    disabled={mpesaStage === 'pending'}
+                    required
+                  />
+                  <span className="mt-1 block text-xs text-slate-500">We&rsquo;ll send an STK push to this Safaricom number. Use the line that will authorise the donation.</span>
+                </label>
+              )}
               <label className="sm:col-span-2">
                 <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Channel</span>
                 <select
                   value={formValues.channel}
-                  onChange={event => setFormValues(prev => ({ ...prev, channel: event.target.value as Channel }))}
+                  onChange={event => {
+                    const nextChannel = event.target.value as Channel
+                    resetMpesaState({ preservePhone: nextChannel === 'M-Pesa' })
+                    setFormValues(prev => ({ ...prev, channel: nextChannel }))
+                  }}
                   className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  disabled={mpesaStage === 'pending'}
                 >
                   <option value="M-Pesa">M-Pesa Till {MPESA_TILL}</option>
                   <option value="PayPal">PayPal</option>
@@ -906,16 +1169,23 @@ export default function DonateExperience() {
               {formError && (
                 <p className="sm:col-span-2 text-sm font-medium text-rose-500">{formError}</p>
               )}
+              {isMpesaChannel && mpesaStage === 'pending' && formValues.phone && (
+                <p className="sm:col-span-2 rounded-lg bg-primary/5 px-3 py-2 text-sm text-primary">
+                  We sent an STK push to {maskPhoneNumber(formValues.phone)}. Approve it on your phone to finish.
+                </p>
+              )}
+              {isMpesaChannel && mpesaError && (
+                <p className="sm:col-span-2 text-sm font-medium text-rose-500">{mpesaError}</p>
+              )}
+              {isMpesaChannel && mpesaReceipt && (
+                <p className="sm:col-span-2 text-sm text-emerald-600">Receipt {mpesaReceipt} recorded. Thank you for fuelling emergency care!</p>
+              )}
               <div className="sm:col-span-2 flex flex-wrap gap-3">
-                <button type="submit" className="btn-primary" disabled={submitting}>
+                <button type="submit" className="btn-primary" disabled={submitButtonDisabled}>
                   <PartyPopper className="h-4 w-4" />
-                  {submitting ? 'Logging…' : 'Log my donation'}
+                  {submitButtonLabel}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setFormValues({ firstName: '', amount: '', channel: 'M-Pesa' })}
-                  className="btn-outline"
-                >
+                <button type="button" onClick={resetDonationForm} className="btn-outline" disabled={mpesaStage === 'pending'}>
                   Clear form
                 </button>
               </div>

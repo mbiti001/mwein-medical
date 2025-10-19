@@ -1,6 +1,7 @@
 "use client"
 
 import { Suspense, useState, FormEvent } from 'react'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 function LoginPageInner() {
@@ -89,6 +90,14 @@ function LoginPageInner() {
             {isSubmitting ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
+        <div className="mt-4 text-center">
+          <Link href="/forgot-password" className="text-sm font-medium text-sky-300 underline underline-offset-4">
+            Forgot password?
+          </Link>
+          <p className="mt-2 text-xs text-slate-400">
+            We email a secure reset link to <span className="font-semibold text-white">mweinmedical@gmail.com</span> so the new password can be saved in your manager.
+          </p>
+        </div>
       </div>
     </section>
   )

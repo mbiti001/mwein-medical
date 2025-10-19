@@ -110,6 +110,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               <p className="text-sm">
                 <Link href="/shop" className="text-primary">Shop</Link> ·{' '}
                 <Link href="/donate" className="text-primary">Donate</Link> ·{' '}
+                <Link href="/antifraud" className="text-primary">Antifraud desk</Link> ·{' '}
                 <Link href="/privacy" className="text-primary">Privacy</Link> ·{' '}
                 <Link href="/terms" className="text-primary">Terms</Link>
               </p>

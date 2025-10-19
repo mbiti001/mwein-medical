@@ -127,10 +127,10 @@ export default function Services() {
             <h3 className="text-lg font-semibold text-slate-900">Need to coordinate extra support?</h3>
             <p className="text-sm text-slate-600">Our admin team lines up partner ambulances, donor-funded fee waivers, or private rooms when needed. Let us know in advance so arrival is stress-free.</p>
             <div className="rounded-2xl border border-primary/30 bg-primary/5 p-6 text-sm text-slate-700 space-y-3">
-              <p className="font-semibold text-primary">Quick help</p>
-              <p>Email <a className="underline" href="mailto:appointments@mweinmedical.co.ke">appointments@mweinmedical.co.ke</a> or call <a className="underline" href="tel:+254707711888">+254 707 711 888</a> for coordination.</p>
-              <p className="font-semibold text-primary">Need financial aid?</p>
-              <p>Ask about the community fund—eligible families receive donor-supported subsidies for emergency care.</p>
+              <p className="font-semibold text-primary">Screened waivers only</p>
+              <p>We validate every financial aid case inside the clinic and log fee waivers in our internal ledger before any donor funds are released.</p>
+              <p className="font-semibold text-primary">How to request help</p>
+              <p>Visit the clinic or call <a className="underline" href="tel:+254707711888">+254 707 711 888</a>. Our team will assess the case, capture documentation, and add it to the accountability register for supporters.</p>
             </div>
           </div>
         </div>

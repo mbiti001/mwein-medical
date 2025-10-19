@@ -11,7 +11,8 @@ const navItems = [
   { href: '/mental-health', label: 'Mental health' },
   { href: '/providers', label: 'Providers' },
   { href: '/shop', label: 'Shop' },
-  { href: '/contact', label: 'Contact' }
+  { href: '/contact', label: 'Contact' },
+  { href: '/antifraud', label: 'Antifraud desk' }
 ]
 
 export default function Header() {

@@ -1,6 +1,9 @@
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { buildPageMetadata } from '../lib/metadata'
 import { serviceLines } from '../data/serviceLines'
+
+const DonationSnake = dynamic(() => import('../components/DonationSnake'))
 
 const accessOptions = [
   {
@@ -82,7 +85,9 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="section-spacing">
+  <DonationSnake />
+
+  <section className="section-spacing">
         <h2 className="mb-6 text-2xl font-semibold text-slate-900">Where we focus your care</h2>
         <div className="grid gap-6 lg:grid-cols-2">
           {serviceLines.map(line => (

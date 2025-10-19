@@ -59,8 +59,34 @@ model DonationSupporter {
   publicAcknowledgement Boolean   @default(false)
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+  transactions          DonationTransaction[]
 
   @@index([donationCount, totalAmount])
+}
+
+model DonationTransaction {
+  id                   String              @id @default(uuid())
+  phone                String
+  normalizedPhone      String
+  amount               Int
+  firstName            String
+  accountReference     String
+  checkoutRequestId    String?
+  merchantRequestId    String?
+  mpesaReceiptNumber   String?
+  resultCode           String?
+  resultDescription    String?
+  status               String              @default("PENDING")
+  failureReason        String?
+  callbackMetadata     String?
+  supporterId          String?
+  supporter            DonationSupporter?  @relation(fields: [supporterId], references: [id], onDelete: SetNull)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  @@unique([checkoutRequestId])
+  @@index([normalizedPhone, createdAt])
+  @@index([status, createdAt])
 }
 
 model ShopOrder {
@@ -91,6 +117,7 @@ model AdminUser {
   role         String   @default("PHARMACY")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  passwordResets AdminPasswordReset[]
 
   @@index([role, createdAt])
 }
@@ -109,4 +136,38 @@ model OrderNotification {
 
   @@index([orderId, createdAt])
   @@index([channel, createdAt])
+}
+
+model AntifraudReport {
+  id                 String   @id @default(uuid())
+  reporterAlias      String?
+  reporterContact    String?
+  suspectName        String?
+  suspectPhone       String?
+  transactionAmount  Int?
+  transactionReason  String
+  transactionDate    DateTime?
+  evidenceSummary    String
+  evidenceUrl        String?
+  identifier         String?
+  status             String   @default("NEW")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([identifier])
+}
+
+model AdminPasswordReset {
+  id           String    @id @default(uuid())
+  tokenHash    String    @unique
+  email        String
+  adminUserId  String
+  adminUser    AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  expiresAt    DateTime
+  usedAt       DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([expiresAt])
 }

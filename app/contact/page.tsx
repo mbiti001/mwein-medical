@@ -64,6 +64,14 @@ export default function Contact() {
             </p>
           </div>
 
+          <div className="rounded-3xl border border-rose-100 bg-rose-50/60 p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-rose-900">Concerned about a payment?</h3>
+            <p className="mt-2 text-sm text-rose-900/80">
+              If cash or a phone transfer felt suspicious, share the details with clinic leadership. We&apos;ll confirm whether the funds reached our official till and follow up discreetly.
+            </p>
+            <Link href="/antifraud" className="btn-outline mt-4 inline-flex">Open antifraud desk</Link>
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="contact-tile">
               <span className="text-2xl" aria-hidden>🕒</span>
