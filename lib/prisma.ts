@@ -7,14 +7,14 @@ declare global {
 	var prisma: PrismaClient | undefined
 }
 
-const datasourceUrl = env.databaseUrl
+const datasourceUrl = env.DATABASE_URL
 
 if (!process.env.DATABASE_URL) {
 	process.env.DATABASE_URL = datasourceUrl
 }
 
 if (!process.env.DATABASE_PROVIDER) {
-	process.env.DATABASE_PROVIDER = env.databaseProvider
+	process.env.DATABASE_PROVIDER = env.DATABASE_PROVIDER
 }
 
 export const prisma =
