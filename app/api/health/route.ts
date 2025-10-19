@@ -1,11 +1,36 @@
 import { NextRequest } from 'next/server'
 import { withApiHandler } from '../../../lib/middleware/apiMiddleware'
 import { apiSuccess, apiError } from '../../../lib/apiResponse'
-import { checkDatabaseHealth, validateRequiredEnvVars } from '../../../lib/utils/apiMigration'
 import { env } from '../../../lib/env'
+import { PrismaClient } from '@prisma/client'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+
+// Health check utilities
+async function checkDatabaseHealth() {
+  try {
+    const prisma = new PrismaClient()
+    await prisma.$connect()
+    await prisma.$disconnect()
+    return { status: 'up', error: null }
+  } catch (error) {
+    return { 
+      status: 'down', 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    }
+  }
+}
+
+function validateRequiredEnvVars() {
+  const required = ['DATABASE_URL', 'ADMIN_SESSION_SECRET']
+  const missing = required.filter(key => !process.env[key])
+  
+  return {
+    requiredEnvs: missing.length === 0,
+    missingEnvs: missing
+  }
+}
 
 export const GET = withApiHandler(async (request: NextRequest, context) => {
   const { requestId } = context;
@@ -14,8 +39,7 @@ export const GET = withApiHandler(async (request: NextRequest, context) => {
   const dbHealth = await checkDatabaseHealth();
   
   // Check required environment variables
-  const requiredEnvs = ['DATABASE_URL', 'ADMIN_SESSION_SECRET'];
-  const envCheck = validateRequiredEnvVars(requiredEnvs);
+  const envCheck = validateRequiredEnvVars();
   
   // Check optional services
   const resendConfigured = Boolean(process.env.RESEND_API_KEY);
@@ -32,11 +56,11 @@ export const GET = withApiHandler(async (request: NextRequest, context) => {
     environment: {
       node: process.version,
       vercel: process.env.VERCEL_ENV ?? null,
-      siteUrl: env.siteUrl,
+      siteUrl: env.SITE_URL,
     },
     services: {
       database: {
-        status: dbHealth.healthy ? 'up' : 'down',
+        status: dbHealth.status === 'up' ? 'up' : 'down',
         error: dbHealth.error || null,
       },
       email: {
@@ -45,13 +69,13 @@ export const GET = withApiHandler(async (request: NextRequest, context) => {
       },
     },
     configuration: {
-      requiredEnvs: envCheck.valid,
-      missingEnvs: envCheck.missing,
+      requiredEnvs: envCheck.requiredEnvs,
+      missingEnvs: envCheck.missingEnvs,
     },
   };
   
   // Determine overall health status
-  if (!dbHealth.healthy || !envCheck.valid) {
+  if (dbHealth.status !== 'up' || !envCheck.requiredEnvs) {
     healthStatus.status = 'unhealthy';
     return apiError(
       'HEALTH_CHECK_FAILED',
