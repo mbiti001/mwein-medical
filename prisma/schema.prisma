@@ -28,6 +28,9 @@ model AppointmentRequest {
   @@index([status, createdAt])
   @@index([identifier])
   @@index([consultationType, consultationDate])
+  @@index([phone])
+  @@index([email])
+  @@index([name])
 }
 
 model ExitFeedback {
@@ -112,6 +115,8 @@ model ShopOrder {
 
   @@index([status, createdAt])
   @@index([reference])
+  @@index([phone])
+  @@index([customerName])
 }
 
 model AdminUser {
@@ -177,6 +182,8 @@ model AntifraudReport {
 
   @@index([status, createdAt])
   @@index([identifier])
+  @@index([suspectPhone])
+  @@index([reporterContact])
 }
 
 model AdminPasswordReset {
