@@ -38,7 +38,7 @@ export async function issueAdminPasswordReset(email: string) {
     }
   })
 
-  const resetUrl = new URL('/reset-password', env.siteUrl)
+  const resetUrl = new URL('/reset-password', env.SITE_URL)
   resetUrl.searchParams.set('token', rawToken)
   resetUrl.searchParams.set('email', normalizedEmail)
 
