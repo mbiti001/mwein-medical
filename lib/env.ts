@@ -33,37 +33,65 @@ function normalizeMpesaEnvironment(value: string | undefined | null) {
   return value.toLowerCase() === 'production' ? 'production' : 'sandbox'
 }
 
+// Environment configuration
 export const env = {
-  siteUrl,
-  databaseUrl,
-  get databaseProvider() {
-    return inferDatabaseProvider(databaseUrl)
-  },
-  smtp: {
-    host: process.env.SMTP_HOST ?? '',
-    port: Number(process.env.SMTP_PORT ?? '587'),
-    secure: (process.env.SMTP_SECURE ?? '').toLowerCase() === 'true',
-    user: process.env.SMTP_USER ?? '',
-    pass: process.env.SMTP_PASS ?? '',
-    from: process.env.SMTP_FROM ?? '',
-    to: process.env.CONTACT_EMAIL ?? ''
-  },
-  adminSessionSecret: process.env.ADMIN_SESSION_SECRET ?? null,
-  mpesa: {
-    consumerKey: process.env.MPESA_CONSUMER_KEY ?? '',
-    consumerSecret: process.env.MPESA_CONSUMER_SECRET ?? '',
-    passkey: process.env.MPESA_PASSKEY ?? '',
-    shortCode: process.env.MPESA_SHORT_CODE ?? '8121096',
-    tillNumber: process.env.NEXT_PUBLIC_MPESA_TILL ?? process.env.MPESA_SHORT_CODE ?? '8121096',
-    callbackUrl: resolveMpesaCallbackUrl(),
-    environment: normalizeMpesaEnvironment(process.env.MPESA_ENVIRONMENT),
-    callbackSecret: process.env.MPESA_CALLBACK_SECRET ?? ''
+  // Core settings
+  NODE_ENV: process.env.NODE_ENV || 'development',
+  
+  // Database
+  DATABASE_URL: process.env.DATABASE_URL || 'file:./dev.db',
+  DATABASE_PROVIDER: process.env.DATABASE_PROVIDER || 'sqlite',
+  
+  // Email
+  RESEND_API_KEY: process.env.RESEND_API_KEY || '',
+  CONTACT_TO: process.env.CONTACT_TO || 'appointments@mweinmedical.co.ke',
+  CONTACT_FROM: process.env.CONTACT_FROM || 'Mwein Medical <no-reply@mweinmedical.com>',
+  
+  // Admin
+  ADMIN_SESSION_SECRET: process.env.ADMIN_SESSION_SECRET || 'fallback-secret-for-development-only',
+  NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || 'fallback-nextauth-secret',
+  NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:3000',
+  
+  // Site
+  SITE_URL: process.env.SITE_URL || process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}`
+    : 'http://localhost:3000',
+    
+  // Admin seeding
+  ADMIN_SEED_EMAIL: process.env.ADMIN_SEED_EMAIL || 'admin@mweinmedical.co.ke',
+  ADMIN_SEED_PASSWORD: process.env.ADMIN_SEED_PASSWORD || 'MweinAdmin123!',
+  ADMIN_SEED_ROLE: process.env.ADMIN_SEED_ROLE || 'ADMIN',
+  
+  // Production safeguards
+  ALLOW_SEED: process.env.ALLOW_SEED || 'false',
+}
+
+// Type-safe environment validation
+export function validateEnv() {
+  const required = [
+    'DATABASE_URL',
+    'ADMIN_SESSION_SECRET',
+  ] as const
+  
+  const missing = required.filter(key => !env[key] || env[key] === '')
+  
+  if (missing.length > 0) {
+    console.warn('⚠️  Missing environment variables:', missing)
+    // Don't throw in build time, just warn
+    if (process.env.NODE_ENV === 'production' && typeof window === 'undefined') {
+      console.error('❌ Required environment variables missing in production')
+    }
+  }
+  
+  return {
+    isValid: missing.length === 0,
+    missing
   }
 }
 
 export function requireAdminSessionSecret() {
-  if (!env.adminSessionSecret) {
+  if (!env.ADMIN_SESSION_SECRET) {
     throw new Error('Missing required environment variable: ADMIN_SESSION_SECRET')
   }
-  return env.adminSessionSecret
+  return env.ADMIN_SESSION_SECRET
 }

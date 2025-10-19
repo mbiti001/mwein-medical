@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma migrate deploy && next build",
+    "build": "prisma generate && next build",
+    "build:production": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest",
@@ -13,10 +14,12 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier -w .",
     "seed:admin": "tsx scripts/seed-admin.ts",
+    "seed": "tsx prisma/seed.ts",
     "check": "npm run lint && npm run test -- --run && npm run typecheck && npm run build",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
-    "prisma:migrate:deploy": "prisma migrate deploy"
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:push": "prisma db push"
   },
   "engines": {
     "node": ">=18.18 <23"
