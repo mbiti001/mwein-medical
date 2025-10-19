@@ -1,132 +1,65 @@
-import { NextResponse } from 'next/server'
-import nodemailer from 'nodemailer'
-import { z } from 'zod'
-import { Prisma } from '@prisma/client'
-import { checkRateLimit, identifyClient, shouldDropForHoneypot } from '../../../lib/contactProtection'
-import { prisma } from '../../../lib/prisma'
+// app/api/contact/route.ts
+import { NextResponse } from "next/server";
+import { Resend } from "resend";
+import ContactRequestEmail from "../../../emails/ContactRequestEmail";
+import { contactSchema } from "../../../lib/validation/contact";
 
-const genderOptions = ['female', 'male', 'non_binary', 'prefer_not_to_say'] as const
-const visitTypeOptions = ['in_person', 'telehealth'] as const
+export const runtime = "nodejs"; // Resend works great on Node runtime
 
-const contactSchema = z.object({
-  name: z.string().min(1),
-  phone: z.string().min(7).max(32),
-  email: z.string().email().optional().or(z.literal('')),
-  preferredDate: z.string().min(4, 'Preferred date is required'),
-  preferredTime: z.string().min(3, 'Preferred time is required'),
-  reason: z.string().min(3).max(500),
-  age: z.coerce.number().int().min(0).max(120),
-  gender: z.enum(genderOptions),
-  visitType: z.enum(visitTypeOptions),
-  botField: z.string().max(0).optional(),
-})
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-export async function POST(request: Request) {
-  let appointmentId: string | null = null
+// Configure who receives admin notifications and who it's "from"
+const CONTACT_TO = process.env.CONTACT_TO ?? "you@example.com";
+const CONTACT_FROM = process.env.CONTACT_FROM ?? "Mwein Medical <no-reply@mweinmedical.com>";
 
+export async function POST(req: Request) {
   try {
-    const body = await request.json()
+    const body = await req.json().catch(() => ({}));
 
-    const identifier = identifyClient(request.headers)
-
-    if (shouldDropForHoneypot(body.botField)) {
-      console.warn('Contact honeypot triggered', { identifier })
-      return NextResponse.json({ ok: true })
+    // Honeypot: if filled, silently accept (pretend success)
+    if (typeof body?.honeypot === "string" && body.honeypot.trim().length > 0) {
+      return NextResponse.json({ ok: true }, { status: 200 });
     }
 
-    if (checkRateLimit(identifier)) {
-      return NextResponse.json({ error: 'rate_limited' }, { status: 429 })
+    const parsed = contactSchema.safeParse(body);
+    if (!parsed.success) {
+      const issues = parsed.error.format();
+      return NextResponse.json({ ok: false, errors: issues }, { status: 400 });
     }
 
-    const parsed = contactSchema.parse(body)
+    const data = parsed.data;
 
-    const consultationType = parsed.visitType === 'telehealth' ? 'TELEHEALTH' : 'IN_PERSON'
-    const consultationDate = (() => {
-      if (!parsed.preferredDate) return null
-      const isoString = parsed.preferredTime
-        ? `${parsed.preferredDate}T${parsed.preferredTime}`
-        : parsed.preferredDate
-      const candidate = new Date(isoString)
-      return Number.isNaN(candidate.getTime()) ? null : candidate
-    })()
-
-    const appointment = await prisma.appointmentRequest.create({
-      data: {
-        name: parsed.name,
-        phone: parsed.phone,
-        email: parsed.email || null,
-        preferredDate: parsed.preferredDate,
-        preferredTime: parsed.preferredTime,
-        reason: parsed.reason,
-        patientAge: parsed.age,
-        patientGender: parsed.gender,
-        consultationType,
-        consultationDate,
-        identifier: identifier !== 'unknown' ? identifier : null
-      }
-    })
-    appointmentId = appointment.id
-
-    // If SMTP is not configured, log and return success so the frontend UX works.
-    const smtpHost = process.env.SMTP_HOST
-    const smtpUser = process.env.SMTP_USER
-    const smtpPass = process.env.SMTP_PASS
-
-    const to = process.env.CONTACT_EMAIL || smtpUser
-
-    if (!smtpHost || !smtpUser || !smtpPass) {
-      console.log('Contact submission (no SMTP configured):', parsed)
-      return NextResponse.json({ ok: true, notice: 'no-smtp', id: appointment.id })
+    // (Optional) basic abuse guard: drop absurdly long payloads
+    if (data.reason.length > 2000) {
+      return NextResponse.json({ ok: false, error: "Reason too long" }, { status: 413 });
     }
 
-    const transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: Number(process.env.SMTP_PORT || 587),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: { user: smtpUser, pass: smtpPass },
-    })
+    // Send email via Resend
+    const { error } = await resend.emails.send({
+      from: CONTACT_FROM,
+      to: [CONTACT_TO],
+      subject: `New appointment request: ${data.name} (${data.preferredDate} ${data.preferredTime})`,
+      react: ContactRequestEmail({
+        name: data.name,
+        phone: data.phone,
+        preferredDate: data.preferredDate,
+        preferredTime: data.preferredTime,
+        reason: data.reason,
+      }),
+      // You can also set reply_to to the clinic address if you want quick replies
+      // reply_to: "mweinmedical@gmail.com",
+    });
 
-    const subject = `Appointment request from ${parsed.name}`
-    const html = `
-      <p><strong>Name:</strong> ${parsed.name}</p>
-      <p><strong>Phone:</strong> ${parsed.phone}</p>
-      <p><strong>Email:</strong> ${parsed.email || '—'}</p>
-      <p><strong>Preferred date:</strong> ${parsed.preferredDate}</p>
-      <p><strong>Preferred time:</strong> ${parsed.preferredTime}</p>
-      <p><strong>Reason:</strong><br/>${parsed.reason.replace(/\n/g, '<br/>')}</p>
-    `
+    if (error) {
+      // Bubble a safe message to the client
+      return NextResponse.json({ ok: false, error: "Failed to send email" }, { status: 502 });
+    }
 
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || smtpUser,
-      to,
-      subject,
-      html,
-    })
+    // TODO: optionally persist to your DB (Prisma/Drizzle) here
 
-    return NextResponse.json({ ok: true, id: appointment.id })
+    return NextResponse.json({ ok: true }, { status: 200 });
   } catch (err) {
-    if (appointmentId) {
-      const note = err instanceof Error ? err.message : 'Unknown delivery error'
-      await prisma.appointmentRequest.update({
-        where: { id: appointmentId },
-        data: {
-          notes: `Follow up manually. ${note}`
-        }
-      }).catch(updateError => {
-        console.error('Failed to annotate appointment after error', updateError)
-      })
-    }
-
-    if (err instanceof z.ZodError) {
-      return NextResponse.json({ error: 'validation', details: err.format() }, { status: 422 })
-    }
-
-    if (err instanceof Prisma.PrismaClientKnownRequestError || err instanceof Prisma.PrismaClientInitializationError) {
-      console.error('Database write failed for contact submission', err)
-      return NextResponse.json({ error: 'database' }, { status: 500 })
-    }
-
-    console.error('Contact handler error:', err)
-    return NextResponse.json({ error: 'server' }, { status: 500 })
+    console.error(err);
+    return NextResponse.json({ ok: false, error: "Server error" }, { status: 500 });
   }
 }
