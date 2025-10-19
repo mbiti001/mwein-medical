@@ -1,11 +1,8 @@
 # Mwein Medical Services site
 
-		- name: Trigger Vercel deployment
-			if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-			env:
-				VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
-			run: |
-				curl -X POST "$VERCEL_DEPLOY_HOOK_URL"
+## Environment configuration
+
+1. Copy the example environment file:
 
 	 ```bash
 	 cp .env.example .env.local
@@ -170,25 +167,14 @@ If you host on Vercel (or another CI-triggered platform) you have two easy optio
 - Or, create a deploy hook (e.g. Vercel → **Settings → Git → Deploy Hooks**), add the hook URL as an `VERCEL_DEPLOY_HOOK_URL` Actions secret, and append a final step to the workflow that `curl`s the hook when lint/tests succeed. Example snippet:
 
 ```yaml
-			- name: Trigger Vercel deployment
-				if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-				env:
-	Update `SMTP_*`, `CONTACT_EMAIL`, and `ADMIN_SESSION_SECRET` alongside `DATABASE_URL` as needed. Leaving the email values blank will fall back to console logging so you can still submit the form locally, but you must seed at least one admin account before you can access the dashboard.
-
-2. Seed an admin user (one-time per environment) so the dashboard login works:
-
-	```bash
-	ADMIN_SEED_EMAIL=admin@example.com \
-	ADMIN_SEED_PASSWORD=super-secure-password \
-	ADMIN_SEED_ROLE=ADMIN \
-	npm run seed:admin
-	```
-
-	The role defaults to `ADMIN` if omitted. Accepted values are `ADMIN`, `PHARMACY`, and `CLINIC`. Remove the plaintext seed variables from your shell after the account is created—the password is hashed in the database.
-				run: |
-3. If you stay on the bundled SQLite database, nothing else is required—`lib/prisma.ts` points to `file:./prisma/dev.db` by default when `DATABASE_URL` is missing.
+- name: Trigger Vercel deployment
+  if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  env:
+    VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+  run: |
+    curl -X POST "$VERCEL_DEPLOY_HOOK_URL"
 ```
-4. To use PostgreSQL (or another provider) instead:
+
 Feel free to extend the workflow with build checks (`npm run build`), preview comment bots, or integration test jobs as the project grows.
 
 ## Testing
