@@ -493,7 +493,7 @@ export default function DonateExperience() {
       setPendingShare(null)
 
       try {
-        const response = await fetch('/api/donations/mpesa/initiate', {
+        const response = await fetch('/api/mpesa/stk', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
@@ -518,16 +518,16 @@ export default function DonateExperience() {
           return
         }
 
-        const payload: { transaction?: { transactionId?: string | null } } = await response.json()
-        const transactionId = payload.transaction?.transactionId
-        if (!transactionId) {
+        const payload: { paymentId?: string } = await response.json()
+        const paymentId = payload.paymentId
+        if (!paymentId) {
           setFormError('We could not create the M-Pesa request. Please try again.')
           setMpesaStage('failed')
           setSubmitting(false)
           return
         }
 
-        setMpesaTransactionId(transactionId)
+        setMpesaTransactionId(paymentId)
         mpesaStartRef.current = Date.now()
         setMpesaStage('pending')
         setTimedAcknowledgement(

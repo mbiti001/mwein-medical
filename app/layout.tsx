@@ -1,6 +1,7 @@
 import '../styles/globals.css'
 import { ReactNode } from 'react'
 import Link from 'next/link'
+import Script from 'next/script'
 import type { Metadata, Viewport } from 'next'
 import Header from '../components/Header'
 import DonationAttentionBanner from '../components/DonationAttentionBanner'
@@ -90,6 +91,19 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             })
           }}
         />
+        {/* Google Analytics */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID`}
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'GA_MEASUREMENT_ID');
+          `}
+        </Script>
         <main className="container mx-auto px-4 py-8">{children}</main>
         <footer className="border-t py-8 mt-12 bg-slate-50">
           <div className="container mx-auto px-4 grid md:grid-cols-3 gap-6">

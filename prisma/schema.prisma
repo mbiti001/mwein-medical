@@ -96,6 +96,35 @@ model DonationTransaction {
   @@index([supporterId, createdAt])
 }
 
+model Payment {
+  id                  String   @id @default(cuid())
+  phoneE164           String
+  amountCents         Int
+  currency            String   @default("KES")
+  status              String   @default("PENDING")
+  resultCode          Int?
+  resultDesc          String?
+  mpesaReceiptNumber  String?  @unique
+  merchantRequestId   String   @unique
+  checkoutRequestId   String   @unique
+  txnDate             DateTime?  // parsed from callback (YYYYMMDDHHMMSS)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  donation            Donation?
+
+  @@index([status, createdAt])
+}
+
+model Donation {
+  id           String   @id @default(cuid())
+  name         String
+  message      String?
+  amountCents  Int
+  createdAt    DateTime @default(now())
+  paymentId    String?  @unique
+  payment      Payment? @relation(fields: [paymentId], references: [id])
+}
+
 model ShopOrder {
   id              String    @id @default(uuid())
   reference       String    @unique
@@ -211,3 +240,4 @@ model AdminPasswordReset {
 
   @@index([expiresAt])
 }
+

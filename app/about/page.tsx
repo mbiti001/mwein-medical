@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { buildPageMetadata } from '../../lib/metadata'
 
 export const metadata = buildPageMetadata({
@@ -107,6 +108,53 @@ export default function About() {
                 <p>Remote consultations, chronic care reviews, and home visit program scale countywide.</p>
               </li>
             </ol>
+          </div>
+        </div>
+      </section>
+
+      <section className="section-spacing">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-slate-900 mb-4">Life at Mwein Medical</h2>
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+            See the care and community that make our clinic a trusted cornerstone of Mungatsi.
+          </p>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="relative overflow-hidden rounded-2xl shadow-lg">
+            <Image
+              src="https://images.unsplash.com/photo-1551190822-a9333d879b1f?w=400&h=300&fit=crop"
+              alt="Clinic exterior with welcoming entrance"
+              width={400}
+              height={300}
+              className="w-full h-64 object-cover"
+            />
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+              <p className="text-white font-semibold">Our welcoming entrance</p>
+            </div>
+          </div>
+          <div className="relative overflow-hidden rounded-2xl shadow-lg">
+            <Image
+              src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=400&h=300&fit=crop"
+              alt="Maternity care consultation room"
+              width={400}
+              height={300}
+              className="w-full h-64 object-cover"
+            />
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+              <p className="text-white font-semibold">Maternity consultation</p>
+            </div>
+          </div>
+          <div className="relative overflow-hidden rounded-2xl shadow-lg">
+            <Image
+              src="https://images.unsplash.com/photo-1576671081837-49000212a370?w=400&h=300&fit=crop"
+              alt="Laboratory technician at work"
+              width={400}
+              height={300}
+              className="w-full h-64 object-cover"
+            />
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+              <p className="text-white font-semibold">Rapid diagnostics lab</p>
+            </div>
           </div>
         </div>
       </section>

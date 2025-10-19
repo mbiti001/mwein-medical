@@ -65,10 +65,10 @@ export type InitiateMpesaDonationInput = {
 }
 
 export type InitiateMpesaDonationResult = {
-  transactionId: string
+  paymentId: string
   checkoutRequestId?: string | null
   merchantRequestId?: string | null
-  status: MpesaTransactionStatus
+  status: 'PENDING' | 'SUCCESS' | 'FAILED'
 }
 
 export type MpesaCallbackMetadataItem = {
@@ -199,8 +199,8 @@ export async function initiateMpesaDonation(input: InitiateMpesaDonationInput): 
   const config = ensureConfig()
 
   const normalizedPhone = normalizePhoneNumber(input.phone)
-  const amount = Math.round(input.amount)
-  if (!Number.isFinite(amount) || amount <= 0) {
+  const amountCents = Math.round(input.amount * 100) // Convert to cents
+  if (!Number.isFinite(amountCents) || amountCents <= 0) {
     throw new MpesaApiError('Donation amount must be greater than zero.')
   }
 
@@ -212,13 +212,10 @@ export async function initiateMpesaDonation(input: InitiateMpesaDonationInput): 
   const accountReference = (input.accountReference ?? firstName).replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 12) || 'MWEINCARE'
   const transactionDesc = input.transactionDesc ?? 'Mwein Emergency Care Donation'
 
-  const transaction = await prisma.donationTransaction.create({
+  const payment = await prisma.payment.create({
     data: {
-      phone: input.phone,
-      normalizedPhone,
-      amount,
-      firstName,
-      accountReference,
+      phoneE164: normalizedPhone,
+      amountCents,
       status: 'PENDING'
     }
   })
@@ -239,7 +236,7 @@ export async function initiateMpesaDonation(input: InitiateMpesaDonationInput): 
         Password: password,
         Timestamp: timestamp,
         TransactionType: 'CustomerBuyGoodsOnline',
-        Amount: amount,
+        Amount: amountCents / 100, // Convert back to KES
         PartyA: normalizedPhone,
         PartyB: config.shortCode,
         PhoneNumber: normalizedPhone,
@@ -262,29 +259,29 @@ export async function initiateMpesaDonation(input: InitiateMpesaDonationInput): 
       throw new MpesaApiError(description, payload.ResponseCode)
     }
 
-    const updated = await prisma.donationTransaction.update({
-      where: { id: transaction.id },
+    const updated = await prisma.payment.update({
+      where: { id: payment.id },
       data: {
-        merchantRequestId: payload.MerchantRequestID ?? null,
-        checkoutRequestId: payload.CheckoutRequestID ?? null,
-        resultCode: payload.ResponseCode ?? null,
-        resultDescription: payload.ResponseDescription ?? null
+        merchantRequestId: payload.MerchantRequestID ?? '',
+        checkoutRequestId: payload.CheckoutRequestID ?? '',
+        resultCode: payload.ResponseCode ? parseInt(payload.ResponseCode) : null,
+        resultDesc: payload.ResponseDescription ?? null
       }
     })
 
     return {
-      transactionId: updated.id,
+      paymentId: updated.id,
       checkoutRequestId: updated.checkoutRequestId,
       merchantRequestId: updated.merchantRequestId,
-      status: updated.status as MpesaTransactionStatus
+      status: updated.status as 'PENDING' | 'SUCCESS' | 'FAILED'
     }
   } catch (error) {
     const reason = error instanceof Error ? error.message : 'Unknown MPesa error.'
-    await prisma.donationTransaction.update({
-      where: { id: transaction.id },
+    await prisma.payment.update({
+      where: { id: payment.id },
       data: {
         status: 'FAILED',
-        failureReason: reason
+        resultDesc: reason
       }
     })
     throw error
@@ -313,72 +310,52 @@ export async function processMpesaCallback(payload: MpesaCallbackPayload) {
     throw new MpesaCallbackError('CheckoutRequestID is required.')
   }
 
-  const transaction = await prisma.donationTransaction.findUnique({
+  const payment = await prisma.payment.findUnique({
     where: { checkoutRequestId }
   })
 
-  if (!transaction) {
-    throw new MpesaCallbackError(`No donation transaction found for checkout request ${checkoutRequestId}.`)
+  if (!payment) {
+    throw new MpesaCallbackError(`No payment found for checkout request ${checkoutRequestId}.`)
   }
 
-  if (transaction.status === 'SUCCESS') {
-    return { transaction }
+  if (payment.status === 'SUCCESS') {
+    return { payment }
   }
 
   const metadataMap = extractMetadataItems(callback)
   const mpesaReceipt = typeof metadataMap.get('MpesaReceiptNumber') === 'string' ? (metadataMap.get('MpesaReceiptNumber') as string) : null
   const paidAmountRaw = metadataMap.get('Amount')
-  const paidAmount = typeof paidAmountRaw === 'number' ? Math.round(paidAmountRaw) : transaction.amount
+  const paidAmount = typeof paidAmountRaw === 'number' ? Math.round(paidAmountRaw * 100) : payment.amountCents
 
-  const status: MpesaTransactionStatus = callback.ResultCode === 0 ? 'SUCCESS' : 'FAILED'
-  const failureReason = status === 'FAILED' ? (callback.ResultDesc ?? 'MPesa declined the payment.') : null
+  const status = callback.ResultCode === 0 ? 'SUCCESS' : 'FAILED'
 
-  const updated = await prisma.donationTransaction.update({
-    where: { id: transaction.id },
+  const updated = await prisma.payment.update({
+    where: { id: payment.id },
     data: {
       status,
-      resultCode: callback.ResultCode != null ? String(callback.ResultCode) : null,
-      resultDescription: callback.ResultDesc ?? null,
+      resultCode: callback.ResultCode != null ? callback.ResultCode : null,
+      resultDesc: callback.ResultDesc ?? null,
       mpesaReceiptNumber: mpesaReceipt,
-      failureReason,
-  callbackMetadata: callback.CallbackMetadata ? JSON.stringify(callback.CallbackMetadata) : null
+      txnDate: status === 'SUCCESS' ? new Date() : null
     }
   })
 
   if (status === 'FAILED') {
-    return { transaction: updated }
+    return { payment: updated }
   }
 
-  try {
-    const contribution = await recordSupporterContribution({
-      firstName: transaction.firstName,
-      amount: paidAmount,
-      channel: 'M-Pesa',
-      shareConsent: 'pending'
-    })
-
-    const finalTransaction = await prisma.donationTransaction.update({
-      where: { id: transaction.id },
-      data: {
-        supporterId: contribution.supporter.id
-      }
-    })
-
-    return {
-      transaction: finalTransaction,
-      supporter: contribution.supporter,
-      totals: contribution.totals,
-      recentNewSupporters: contribution.recentNewSupporters
+  // Create Donation record
+  const donation = await prisma.donation.create({
+    data: {
+      name: 'Anonymous',
+      amountCents: paidAmount,
+      paymentId: payment.id
     }
-  } catch (error) {
-    const reason = error instanceof Error ? error.message : 'Unable to log supporter contribution.'
-    await prisma.donationTransaction.update({
-      where: { id: transaction.id },
-      data: {
-        failureReason: reason
-      }
-    })
-    throw error
+  })
+
+  return {
+    payment: updated,
+    donation
   }
 }
 

@@ -1,173 +1,144 @@
-import Link from 'next/link'
+'use client'
 
-import { prisma } from '../../lib/prisma'
-import { ORDER_STATUS_LABELS, parseOrderItems } from '../../lib/orders'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
-async function getRecentOrderSummary() {
-  const [totalOrders, pendingCount, latestOrder] = await Promise.all([
-    prisma.shopOrder.count(),
-    prisma.shopOrder.count({ where: { status: 'PENDING' } }),
-    prisma.shopOrder.findFirst({
-      orderBy: [{ createdAt: 'desc' }]
-    })
-  ])
-
-  return {
-    totalOrders,
-    pendingCount,
-    latestOrder: latestOrder
-      ? {
-        reference: latestOrder.reference,
-        customerName: latestOrder.customerName,
-        totalAmount: latestOrder.totalAmount,
-        status: latestOrder.status,
-        createdAt: latestOrder.createdAt.toISOString()
-      }
-      : null
-  }
+type Appointment = {
+  id: string
+  name: string
+  email: string
+  phone: string
+  reason: string
+  status: string
+  createdAt: string
 }
 
-async function getTelehealthSnapshot() {
-  const [totalTelehealth, upcomingTelehealth] = await Promise.all([
-    prisma.appointmentRequest.count({ where: { consultationType: 'TELEHEALTH' } }),
-    prisma.appointmentRequest.count({
-      where: {
-        consultationType: 'TELEHEALTH',
-        consultationDate: {
-          gte: new Date(Date.now() - 1000 * 60 * 60)
+type Payment = {
+  id: string
+  phoneE164: string
+  amountCents: number
+  status: string
+  createdAt: string
+}
+
+type Donation = {
+  id: string
+  name: string
+  amountCents: number
+  payment: Payment
+  createdAt: string
+}
+
+export default function Dashboard() {
+  const router = useRouter()
+  const [activeTab, setActiveTab] = useState('overview')
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [payments, setPayments] = useState<Payment[]>([])
+  const [donations, setDonations] = useState<Donation[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [apptRes, payRes, donRes] = await Promise.all([
+          fetch('/api/appointments'),
+          fetch('/api/payments'),
+          fetch('/api/donations')
+        ])
+        if (apptRes.status === 401 || payRes.status === 401 || donRes.status === 401) {
+          router.push('/login')
+          return
         }
+        if (apptRes.ok) setAppointments(await apptRes.json())
+        if (payRes.ok) setPayments(await payRes.json())
+        if (donRes.ok) setDonations(await donRes.json())
+      } catch (e) {
+        console.error(e)
+      } finally {
+        setLoading(false)
       }
-    })
-  ])
+    }
+    fetchData()
+  }, [router])
 
-  return {
-    totalTelehealth,
-    upcomingTelehealth
-  }
-}
+  if (loading) return <div className="p-8">Loading...</div>
 
-export default async function DashboardHome() {
-  const [orders, telehealth] = await Promise.all([getRecentOrderSummary(), getTelehealthSnapshot()])
+  const tabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'appointments', label: 'Appointments' },
+    { id: 'payments', label: 'Payments' },
+    { id: 'supporters', label: 'Supporters' }
+  ]
 
   return (
-    <div className="space-y-10">
-      <section className="section-spacing rounded-3xl bg-gradient-to-r from-primary via-indigo-600 to-slate-900 text-white">
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-4">
-            <span className="badge bg-white/15 text-white">Admin overview</span>
-            <h1 className="text-3xl font-semibold">Clinic operations at a glance</h1>
-            <p className="text-sm text-white/80">
-              Quick snapshot of pharmacy orders and telehealth activity captured via the website. Dive into the modules below for more detail or to update statuses.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/dashboard/orders" className="btn-primary bg-white text-slate-900 hover:bg-slate-100">Review orders</Link>
-              <Link href="/dashboard/telehealth" className="btn-outline border-white text-white hover:bg-white/10">Telehealth log</Link>
+    <div className="p-8">
+      <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
+      <div className="flex space-x-4 mb-6">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2 rounded ${activeTab === tab.id ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      {activeTab === 'overview' && (
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Overview</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white p-4 rounded shadow">
+              <h3 className="font-bold">Total Appointments</h3>
+              <p className="text-2xl">{appointments.length}</p>
+            </div>
+            <div className="bg-white p-4 rounded shadow">
+              <h3 className="font-bold">Total Payments</h3>
+              <p className="text-2xl">{payments.length}</p>
+            </div>
+            <div className="bg-white p-4 rounded shadow">
+              <h3 className="font-bold">Total Donations</h3>
+              <p className="text-2xl">{donations.length}</p>
             </div>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="card border-white/20 bg-white/10 text-white">
-              <p className="text-xs uppercase tracking-wider text-white/70">Orders captured</p>
-              <p className="text-4xl font-semibold">{orders.totalOrders}</p>
-              <p className="text-xs text-white/70">{orders.pendingCount} awaiting follow-up</p>
-            </div>
-            <div className="card border-white/20 bg-white/10 text-white">
-              <p className="text-xs uppercase tracking-wider text-white/70">Telehealth consults</p>
-              <p className="text-4xl font-semibold">{telehealth.totalTelehealth}</p>
-              <p className="text-xs text-white/70">{telehealth.upcomingTelehealth} upcoming in next hour</p>
-            </div>
-            {orders.latestOrder && (
-              <div className="sm:col-span-2 card border-white/20 bg-white/10 text-white">
-                <p className="text-xs uppercase tracking-wider text-white/70">Latest order</p>
-                <div className="mt-2 space-y-1">
-                  <p className="text-lg font-semibold">{orders.latestOrder.customerName}</p>
-                  <p className="text-sm text-white/70">Reference {orders.latestOrder.reference}</p>
-                  <p className="text-sm text-white/70">Status {ORDER_STATUS_LABELS[orders.latestOrder.status as keyof typeof ORDER_STATUS_LABELS]}</p>
-                  <p className="text-sm text-white/70">Captured {new Date(orders.latestOrder.createdAt).toLocaleString()}</p>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
-      </section>
-
-      <section className="grid gap-6 lg:grid-cols-2">
-        <div className="card border-slate-800 bg-slate-950">
-          <h2 className="text-lg font-semibold text-white">Recent pharmacy orders</h2>
-          <p className="text-sm text-slate-400 mb-4">Latest four submissions to help prioritise follow-up.</p>
-          <OrdersPreview />
+      )}
+      {activeTab === 'appointments' && (
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Recent Appointments</h2>
+          <ul className="space-y-2">
+            {appointments.map(a => (
+              <li key={a.id} className="bg-white p-4 rounded shadow">
+                {a.name} - {a.reason} - {a.status}
+              </li>
+            ))}
+          </ul>
         </div>
-        <div className="card border-slate-800 bg-slate-950">
-          <h2 className="text-lg font-semibold text-white">Telehealth quick view</h2>
-          <p className="text-sm text-slate-400 mb-4">Recent submissions including planned consultation times.</p>
-          <TelehealthPreview />
+      )}
+      {activeTab === 'payments' && (
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Recent Payments</h2>
+          <ul className="space-y-2">
+            {payments.map(p => (
+              <li key={p.id} className="bg-white p-4 rounded shadow">
+                {p.phoneE164} - {(p.amountCents / 100).toFixed(2)} KES - {p.status}
+              </li>
+            ))}
+          </ul>
         </div>
-      </section>
+      )}
+      {activeTab === 'supporters' && (
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Recent Donations</h2>
+          <ul className="space-y-2">
+            {donations.map(d => (
+              <li key={d.id} className="bg-white p-4 rounded shadow">
+                {d.name} - {(d.amountCents / 100).toFixed(2)} KES
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
-  )
-}
-
-async function OrdersPreview() {
-  const orders = await prisma.shopOrder.findMany({
-    orderBy: [{ createdAt: 'desc' }],
-    take: 4
-  })
-
-  if (orders.length === 0) {
-    return <p className="text-sm text-slate-400">No orders captured yet.</p>
-  }
-
-  return (
-    <ul className="space-y-4">
-      {orders.map(order => {
-        const items = parseOrderItems(order.itemsJson)
-        const totalLabel = order.totalAmount > 0 ? `KSh ${order.totalAmount.toLocaleString('en-KE')}` : 'Enquiry'
-        return (
-          <li key={order.id} className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="font-semibold text-white">{order.customerName}</p>
-                <p className="text-xs text-slate-400">{order.reference}</p>
-              </div>
-              <span className="rounded-full border border-slate-800 px-3 py-1 text-xs uppercase tracking-wide text-slate-300">
-                {ORDER_STATUS_LABELS[order.status as keyof typeof ORDER_STATUS_LABELS] ?? order.status}
-              </span>
-            </div>
-            <p className="mt-2 text-sm text-slate-400">Total: {totalLabel}</p>
-            <ul className="mt-3 space-y-1 text-xs text-slate-500">
-              {items.map(item => (
-                <li key={item.id}>• {item.name}{item.price ? ` — KSh ${item.price.toLocaleString('en-KE')}` : ''}</li>
-              ))}
-            </ul>
-          </li>
-        )
-      })}
-    </ul>
-  )
-}
-
-async function TelehealthPreview() {
-  const consultations = await prisma.appointmentRequest.findMany({
-    where: { consultationType: 'TELEHEALTH' },
-    orderBy: [{ createdAt: 'desc' }],
-    take: 5
-  })
-
-  if (consultations.length === 0) {
-    return <p className="text-sm text-slate-400">No telehealth submissions yet.</p>
-  }
-
-  return (
-    <ul className="space-y-3 text-sm text-slate-400">
-      {consultations.map(consultation => (
-        <li key={consultation.id} className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4">
-          <div className="flex items-center justify-between gap-3">
-            <p className="font-medium text-white">{consultation.name}</p>
-            <span className="text-xs uppercase tracking-wide text-slate-500">{consultation.patientGender ?? 'Unknown'}</span>
-          </div>
-          <p className="text-xs text-slate-500">Preferred time {consultation.preferredDate} {consultation.preferredTime}</p>
-          <p className="text-xs text-slate-500">{consultation.reason}</p>
-        </li>
-      ))}
-    </ul>
   )
 }

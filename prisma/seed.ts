@@ -99,33 +99,73 @@ async function main() {
     }
   }
 
-  // Create sample donation supporters
-  console.log('💝 Creating donation supporters...')
+  // Create sample payments and donations
+  console.log('� Creating sample payments and donations...')
   
-  const supporters = [
-    { name: 'Local Mama Group', amount: 2000, message: 'For maternal kits' },
-    { name: 'Busia Family', amount: 500,  message: 'Keeping care close' },
-    { name: 'Anonymous Donor', amount: 1000, message: 'Oxygen for kids' },
-    { name: 'Market Traders Assoc.', amount: 3500, message: 'Community health drive' },
-    { name: 'St. Martha Youth', amount: 750, message: 'Child clinic support' },
+  const samplePayments = [
+    { phoneE164: '+254712345001', amountCents: 200000, status: 'COMPLETED', merchantRequestId: 'MRQ001', checkoutRequestId: 'CRQ001' },
+    { phoneE164: '+254712345002', amountCents: 50000, status: 'COMPLETED', merchantRequestId: 'MRQ002', checkoutRequestId: 'CRQ002' },
+    { phoneE164: '+254712345003', amountCents: 100000, status: 'COMPLETED', merchantRequestId: 'MRQ003', checkoutRequestId: 'CRQ003' },
+    { phoneE164: '+254712345004', amountCents: 350000, status: 'COMPLETED', merchantRequestId: 'MRQ004', checkoutRequestId: 'CRQ004' },
+    { phoneE164: '+254712345005', amountCents: 75000, status: 'COMPLETED', merchantRequestId: 'MRQ005', checkoutRequestId: 'CRQ005' },
   ]
 
-  for (const supporter of supporters) {
-    const normalizedName = supporter.name.toLowerCase().replace(/[^a-z0-9]/g, '')
-    
-    await prisma.donationSupporter.upsert({
-      where: { normalizedName },
-      update: {},
-      create: {
-        firstName: supporter.name,
-        normalizedName,
-        totalAmount: supporter.amount,
-        donationCount: 1,
-        lastChannel: 'MANUAL',
-        lastContributionAt: randomRecentDate(30),
-        publicAcknowledgement: true
-      }
+  const payments = []
+  for (const pay of samplePayments) {
+    const existing = await prisma.payment.findUnique({
+      where: { checkoutRequestId: pay.checkoutRequestId }
     })
+    if (!existing) {
+      const payment = await prisma.payment.create({
+        data: {
+          ...pay,
+          createdAt: randomRecentDate(30)
+        }
+      })
+      payments.push(payment)
+    } else {
+      payments.push(existing)
+    }
+  }
+
+    const sampleDonations = [
+    { name: 'Local Mama Group', amountCents: 200000 },
+    { name: 'Busia Family', amountCents: 50000 },
+    { name: 'Anonymous Donor', amountCents: 100000 },
+    { name: 'Market Traders Assoc.', amountCents: 350000 },
+    { name: 'St. Martha Youth', amountCents: 75000 },
+  ]
+
+  for (let i = 0; i < sampleDonations.length; i++) {
+    const don = sampleDonations[i]
+    const payment = payments[i]
+    const existing = await prisma.donation.findFirst({
+      where: { name: don.name, paymentId: payment.id }
+    })
+    if (!existing) {
+      await prisma.donation.create({
+        data: {
+          ...don,
+          paymentId: payment.id,
+          createdAt: randomRecentDate(30)
+        }
+      })
+    }
+  }
+
+  for (const don of sampleDonations) {
+    const existing = await prisma.donation.findFirst({
+      where: { name: don.name, paymentId: payments[sampleDonations.indexOf(don)].id }
+    })
+    if (!existing) {
+      await prisma.donation.create({
+        data: {
+          ...don,
+          paymentId: payments[sampleDonations.indexOf(don)].id,
+          createdAt: randomRecentDate(30)
+        }
+      })
+    }
   }
 
   console.log('✅ Seeded successfully!')
