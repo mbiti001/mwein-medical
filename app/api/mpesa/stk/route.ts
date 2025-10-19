@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { initiateMpesaDonation } from '@/lib/mpesa';
+import { initiateMpesaDonation } from '../../../../lib/mpesa';
 
 const stkPushSchema = z.object({
   phone: z.string().min(10).max(15),

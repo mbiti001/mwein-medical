@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { handleMpesaCallback } from '@/lib/mpesa';
+import { processMpesaCallback } from '../../../../lib/mpesa';
 
 export async function POST(req: NextRequest) {
   try {
     const payload = await req.json();
-    await handleMpesaCallback(payload);
+    await processMpesaCallback(payload);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('M-Pesa callback error:', error);

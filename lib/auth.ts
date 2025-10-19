@@ -57,7 +57,7 @@ export function getSession() {
   if (!token) return null
   if (!SECRET) return null
   try {
-    const payload = verify(token, SECRET) as any
+    const payload = verify(token, SECRET) as SessionPayload & { iat?: number; exp?: number }
     const issuedAt = typeof payload.iat === 'number' ? payload.iat : Math.floor(Date.now() / 1000)
     const expiresAt = typeof payload.exp === 'number' ? payload.exp : issuedAt + DEFAULT_SESSION_TTL
     return {
@@ -76,7 +76,7 @@ export async function verifyAdminSessionToken(token: string | undefined | null):
   if (!token) return null
   if (!SECRET) return null
   try {
-    const payload = verify(token, SECRET) as any
+    const payload = verify(token, SECRET) as SessionPayload & { iat?: number; exp?: number }
     const issuedAt = typeof payload.iat === 'number' ? payload.iat : Math.floor(Date.now() / 1000)
     const expiresAt = typeof payload.exp === 'number' ? payload.exp : issuedAt + DEFAULT_SESSION_TTL
     return {
@@ -109,5 +109,6 @@ export async function createAdminIfMissing(email: string, password: string) {
   return prisma.user.create({ data: { email, password: hashed, role: 'ADMIN' } })
 }
 
-export default null
+const authModule = null
+export default authModule
  
