@@ -3,8 +3,6 @@ import { NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 
 const COOKIE = 'admin_session'
-const ISSUER = 'mwein-medical'
-const AUD = 'admin'
 
 function getSecret() {
   return new TextEncoder().encode(process.env.ADMIN_SESSION_SECRET || '')
@@ -37,30 +35,32 @@ function applySecurityHeaders(res: NextResponse) {
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
-  const guarded =
-    (pathname.startsWith('/admin') && pathname !== '/admin/login') || pathname.startsWith('/api/admin')
 
-  if (guarded) {
-    const token = req.cookies.get(COOKIE)?.value
-    if (!token) {
-      const redir = NextResponse.redirect(new URL('/admin/login', req.url))
-      return applySecurityHeaders(redir)
-    }
+  // paths we guard: admin area and dashboard
+  const isAdminPath = (pathname.startsWith('/admin') && pathname !== '/admin/login') || pathname.startsWith('/api/admin')
+  const isDashboard = pathname.startsWith('/dashboard')
 
-    try {
-      await jwtVerify(token, getSecret(), { issuer: ISSUER, audience: AUD })
-      const nextRes = NextResponse.next()
-      return applySecurityHeaders(nextRes)
-    } catch {
-      const redir = NextResponse.redirect(new URL('/admin/login', req.url))
-      return applySecurityHeaders(redir)
-    }
+  if (!isAdminPath && !isDashboard) {
+    return applySecurityHeaders(NextResponse.next())
   }
 
-  const nextRes = NextResponse.next()
-  return applySecurityHeaders(nextRes)
+  const token = req.cookies.get(COOKIE)?.value
+  if (!token) {
+    const redirectTo = isAdminPath ? '/admin/login' : '/login'
+    const res = NextResponse.redirect(new URL(redirectTo, req.url))
+    return applySecurityHeaders(res)
+  }
+
+  try {
+    await jwtVerify(token, getSecret())
+    return applySecurityHeaders(NextResponse.next())
+  } catch {
+    const redirectTo = isAdminPath ? '/admin/login' : '/login'
+    const res = NextResponse.redirect(new URL(redirectTo, req.url))
+    return applySecurityHeaders(res)
+  }
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/admin/:path*', '/((?!_next|.*\\..*).*)']
+  matcher: ['/admin/:path*', '/api/admin/:path*', '/dashboard/:path*']
 }

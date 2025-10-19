@@ -69,7 +69,7 @@ describe('POST /api/contact', () => {
 
     const { POST } = await import('./route')
 
-    const response = await POST(request)
+  const response = await POST(request as unknown as import('next/server').NextRequest)
     const data = await response.json()
 
     expect(response.status).toBe(200)
@@ -127,7 +127,7 @@ describe('POST /api/contact', () => {
 
     const { POST } = await import('./route')
 
-    const response = await POST(request)
+  const response = await POST(request as unknown as import('next/server').NextRequest)
     const data = await response.json()
 
     expect(response.status).toBe(200)
@@ -186,7 +186,7 @@ describe('POST /api/contact', () => {
 
     const { POST } = await import('./route')
 
-    const response = await POST(request)
+  const response = await POST(request as unknown as import('next/server').NextRequest)
     const data = await response.json()
 
     expect(response.status).toBe(500)

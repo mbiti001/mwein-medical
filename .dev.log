@@ -1,0 +1,17 @@
+
+> mwein-medical@1.0.0 dev
+> next dev
+
+  ▲ Next.js 14.2.33
+  - Local:        http://localhost:3003
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 2.7s
+ ○ Compiling /api/auth/login ...
+ ✓ Compiled /api/auth/login in 955ms (219 modules)
+ POST /api/auth/login 200 in 3493ms
+ ✓ Compiled /api/auth/logout in 124ms (221 modules)
+ DELETE /api/auth/logout 200 in 154ms
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 658ms (152 modules)

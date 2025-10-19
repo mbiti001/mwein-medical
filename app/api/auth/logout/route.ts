@@ -1,17 +1,19 @@
 import { NextResponse } from 'next/server'
 
-import { ADMIN_SESSION_COOKIE } from '../../../../lib/auth'
+export async function DELETE() {
+  const res = NextResponse.json({ ok: true })
 
-export async function POST() {
-  const response = NextResponse.json({ ok: true })
-  response.cookies.set({
-    name: ADMIN_SESSION_COOKIE,
+  // Clear the admin-session cookie by setting empty value and maxAge 0
+  res.cookies.set({
+    name: 'admin_session',
     value: '',
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
     path: '/',
-    maxAge: 0
+    maxAge: 0,
   })
-  return response
+
+  return res
 }
+
