@@ -62,6 +62,8 @@ model DonationSupporter {
   transactions          DonationTransaction[]
 
   @@index([donationCount, totalAmount])
+  @@index([publicAcknowledgement, lastContributionAt, donationCount])
+  @@index([lastContributionAt])
 }
 
 model DonationTransaction {
@@ -87,6 +89,8 @@ model DonationTransaction {
   @@unique([checkoutRequestId])
   @@index([normalizedPhone, createdAt])
   @@index([status, createdAt])
+  @@index([createdAt])
+  @@index([supporterId, createdAt])
 }
 
 model ShopOrder {
@@ -111,15 +115,32 @@ model ShopOrder {
 }
 
 model AdminUser {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  passwordHash String
-  role         String   @default("PHARMACY")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  passwordResets AdminPasswordReset[]
+  id               String              @id @default(uuid())
+  email            String              @unique
+  passwordHash     String
+  role             String              @default("PHARMACY")
+  twoFactorEnabled Boolean             @default(false)
+  totpSecretEnc    String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  passwordResets   AdminPasswordReset[]
+  logs             AuditLog[]
 
   @@index([role, createdAt])
+}
+
+model AuditLog {
+  id        String    @id @default(uuid())
+  adminId   String
+  admin     AdminUser @relation(fields: [adminId], references: [id])
+  action    String
+  route     String
+  ip        String?
+  payload   String?
+  createdAt DateTime  @default(now())
+
+  @@index([adminId, createdAt])
+  @@index([createdAt])
 }
 
 model OrderNotification {

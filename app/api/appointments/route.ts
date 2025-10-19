@@ -13,7 +13,7 @@ const patchSchema = z.object({
 })
 
 export async function GET() {
-  const session = verifyAdminSessionToken(cookies().get(ADMIN_SESSION_COOKIE)?.value)
+  const session = await verifyAdminSessionToken(cookies().get(ADMIN_SESSION_COOKIE)?.value)
   if (!session) {
     return NextResponse.json({ error: 'unauthorised' }, { status: 401 })
   }
@@ -48,7 +48,7 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const session = verifyAdminSessionToken(cookies().get(ADMIN_SESSION_COOKIE)?.value)
+  const session = await verifyAdminSessionToken(cookies().get(ADMIN_SESSION_COOKIE)?.value)
   if (!session) {
     return NextResponse.json({ error: 'unauthorised' }, { status: 401 })
   }

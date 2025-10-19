@@ -14,7 +14,7 @@ export async function getAuthenticatedAdmin(): Promise<AuthenticatedAdmin | null
   const token = cookies().get(ADMIN_SESSION_COOKIE)?.value
   if (!token) return null
 
-  const session = verifyAdminSessionToken(token)
+  const session = await verifyAdminSessionToken(token)
   if (!session) return null
 
   const user = await prisma.adminUser.findUnique({ where: { id: session.userId } })

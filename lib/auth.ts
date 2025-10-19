@@ -1,11 +1,11 @@
-import crypto from 'crypto'
+import { SignJWT, jwtVerify } from 'jose'
 
-export const ADMIN_SESSION_COOKIE = 'mwein_admin_session'
+export const ADMIN_SESSION_COOKIE = 'admin_session'
 export const DEFAULT_SESSION_TTL = 60 * 60 * 6 // 6 hours
 
 export type AdminRole = 'ADMIN' | 'PHARMACY' | 'CLINIC'
 
-export const ADMIN_ROLES: readonly AdminRole[] = ['ADMIN', 'PHARMACY', 'CLINIC'] as const
+const ADMIN_ROLES: readonly AdminRole[] = ['ADMIN', 'PHARMACY', 'CLINIC'] as const
 
 export function normaliseAdminRole(input: string | null | undefined): AdminRole {
   if (!input) return 'PHARMACY'
@@ -15,6 +15,9 @@ export function normaliseAdminRole(input: string | null | undefined): AdminRole 
   }
   return 'PHARMACY'
 }
+
+const ISSUER = 'mwein-medical'
+const AUDIENCE = 'admin'
 
 export type SessionPayload = {
   userId: string
@@ -32,76 +35,56 @@ function getRequiredEnv(name: string) {
   return value
 }
 
-function encodePayload(payload: SessionPayload) {
-  return Buffer.from(JSON.stringify(payload)).toString('base64url')
+function getSecretKey() {
+  return new TextEncoder().encode(getRequiredEnv('ADMIN_SESSION_SECRET'))
 }
 
-function decodePayload(token: string): SessionPayload | null {
+export async function createAdminSessionToken(payload: { userId: string; email: string; role: AdminRole }, ttlSeconds: number = DEFAULT_SESSION_TTL) {
+  const secret = getSecretKey()
+  const role = normaliseAdminRole(payload.role)
+  const jwt = await new SignJWT({ email: payload.email, role })
+    .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
+    .setSubject(payload.userId)
+    .setIssuedAt()
+    .setIssuer(ISSUER)
+    .setAudience(AUDIENCE)
+    .setExpirationTime(`${ttlSeconds}s`)
+    .sign(secret)
+
+  return jwt
+}
+
+export async function verifyAdminSessionToken(token: string | undefined | null): Promise<SessionPayload | null> {
+  if (!token) return null
   try {
-    const json = Buffer.from(token, 'base64url').toString('utf8')
-    const parsed = JSON.parse(json) as Partial<SessionPayload>
-    if (
-      typeof parsed?.userId !== 'string' ||
-      typeof parsed.email !== 'string' ||
-      typeof parsed.role !== 'string' ||
-      typeof parsed.issuedAt !== 'number' ||
-      typeof parsed.expiresAt !== 'number'
-    ) {
+    const secret = getSecretKey()
+    const { payload } = await jwtVerify(token, secret, {
+      issuer: ISSUER,
+      audience: AUDIENCE
+    })
+
+    if (typeof payload.sub !== 'string') {
       return null
     }
-    return parsed as SessionPayload
-  } catch {
+
+    if (typeof payload.email !== 'string' || typeof payload.role !== 'string') {
+      return null
+    }
+
+    const issuedAt = typeof payload.iat === 'number' ? payload.iat : Math.floor(Date.now() / 1000)
+    const expiresAt = typeof payload.exp === 'number' ? payload.exp : issuedAt + DEFAULT_SESSION_TTL
+
+    return {
+      userId: payload.sub,
+      email: payload.email,
+      role: normaliseAdminRole(payload.role),
+      issuedAt,
+      expiresAt
+    }
+  } catch (error) {
+    console.error('Failed to verify admin session token', error)
     return null
   }
-}
-
-function sign(value: string) {
-  const secret = getRequiredEnv('ADMIN_SESSION_SECRET')
-  return crypto.createHmac('sha256', secret).update(value).digest('base64url')
-}
-
-export function createAdminSessionToken(payload: { userId: string; email: string; role: AdminRole }, ttlSeconds: number = DEFAULT_SESSION_TTL) {
-  const now = Math.floor(Date.now() / 1000)
-  const toEncode: SessionPayload = {
-    userId: payload.userId,
-    email: payload.email,
-    role: payload.role,
-    issuedAt: now,
-    expiresAt: now + ttlSeconds
-  }
-  const encoded = encodePayload(toEncode)
-  const signature = sign(encoded)
-  return `${encoded}.${signature}`
-}
-
-export function verifyAdminSessionToken(token: string | undefined | null): SessionPayload | null {
-  if (!token) return null
-  const parts = token.split('.')
-  if (parts.length !== 2) return null
-  const [encoded, signature] = parts
-  const expectedSignature = sign(encoded)
-  const actualBuffer = Buffer.from(signature)
-  const expectedBuffer = Buffer.from(expectedSignature)
-
-  if (actualBuffer.length !== expectedBuffer.length) {
-    return null
-  }
-
-  if (!crypto.timingSafeEqual(actualBuffer, expectedBuffer)) {
-    return null
-  }
-
-  const payload = decodePayload(encoded)
-  if (!payload) {
-    return null
-  }
-
-  const now = Math.floor(Date.now() / 1000)
-  if (payload.expiresAt < now) {
-    return null
-  }
-
-  return payload
 }
 
 export function signOutCookieValue() {

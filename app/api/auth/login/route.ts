@@ -41,7 +41,7 @@ export async function POST(request: Request) {
 
     const role = normaliseAdminRole(user.role)
 
-    const token = createAdminSessionToken({
+    const token = await createAdminSessionToken({
       userId: user.id,
       email: user.email,
       role

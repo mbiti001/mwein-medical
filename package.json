@@ -1,33 +1,43 @@
 {
-  "name": "mwein-medical-website",
-  "version": "0.1.0",
+  "name": "mwein-medical",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
-    "seed:admin": "node scripts/seed-admin.js",
-    "check": "npm run lint && npm run test -- --run && npm run build",
+  "test:e2e": "playwright test",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier -w .",
+    "seed:admin": "tsx scripts/seed-admin.ts",
+    "check": "npm run lint && npm run test -- --run && npm run typecheck && npm run build",
     "postinstall": "prisma generate",
+    "prisma:generate": "prisma generate",
     "prisma:migrate:deploy": "prisma migrate deploy"
+  },
+  "engines": {
+    "node": ">=18.18 <23"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^5.19.0",
     "bcryptjs": "^2.4.3",
     "dotenv": "^17.2.3",
+    "jose": "^5.2.4",
     "lucide-react": "^0.546.0",
     "next": "^14.0.0",
     "nodemailer": "^7.0.9",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.65.0",
+    "xlsx": "^0.18.5",
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@playwright/test": "^1.50.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.0.0",
     "@types/react": "^18.0.0",
@@ -38,7 +48,9 @@
     "eslint-config-next": "15.5.6",
     "postcss": "^8.0.0",
     "prisma": "^5.19.0",
+    "prettier": "^3.3.3",
     "tailwindcss": "^3.0.0",
+    "tsx": "^4.19.1",
     "typescript": "^5.0.0",
     "vitest": "^3.2.4"
   }
