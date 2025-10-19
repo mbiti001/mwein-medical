@@ -60,6 +60,13 @@ export default function Header() {
             <Phone className="h-4 w-4" />
             Book visit
           </Link>
+          <Link
+            href="/login"
+            className="rounded-full px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-primary/10 hover:text-primary"
+            aria-label="Admin login"
+          >
+            Admin login
+          </Link>
         </div>
 
         <button
@@ -108,6 +115,13 @@ export default function Header() {
             <Link href="/contact" onClick={closeMenu} className="btn-primary justify-center">
               <Phone className="h-4 w-4" />
               Book visit
+            </Link>
+            <Link
+              href="/login"
+              onClick={closeMenu}
+              className="rounded-full border border-slate-200 bg-white px-4 py-3 text-center text-sm font-medium text-slate-600 shadow-sm transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+            >
+              Admin login
             </Link>
           </div>
         </div>

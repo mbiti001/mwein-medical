@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 
 const STORAGE_KEY = 'mwein-exit-survey-dismissed'
 const TRIGGER_COOLDOWN_MS = 120_000
+const RETURNING_VISITOR_KEY = 'mwein-returning-visitor'
 
 const OUTCOMES = {
 	FOUND: 'FOUND',
@@ -27,6 +28,18 @@ export default function ExitIntentSurvey() {
 	const [email, setEmail] = useState('')
 	const [status, setStatus] = useState<SubmitState>('idle')
 	const [validationError, setValidationError] = useState(false)
+	const [isReturningVisitor, setIsReturningVisitor] = useState(false)
+	const [lastSubmissionReturning, setLastSubmissionReturning] = useState(false)
+
+	const markReturningVisitor = useCallback(() => {
+		if (typeof window === 'undefined') return
+		try {
+			localStorage.setItem(RETURNING_VISITOR_KEY, 'true')
+			setIsReturningVisitor(true)
+		} catch (error) {
+			console.warn('Failed to persist returning visitor state', error)
+		}
+	}, [])
 
 	const triggeredRef = useRef(false)
 	const lastClosedRef = useRef<number>(0)
@@ -40,6 +53,17 @@ export default function ExitIntentSurvey() {
 			setStatus('idle')
 		}
 	}, [status])
+
+	useEffect(() => {
+		if (typeof window === 'undefined') return
+		try {
+			if (localStorage.getItem(RETURNING_VISITOR_KEY)) {
+				setIsReturningVisitor(true)
+			}
+		} catch (error) {
+			console.warn('Failed to read returning visitor state', error)
+		}
+	}, [])
 
 	const persistDismissal = useCallback(
 		(reason: DismissalReason) => {
@@ -58,12 +82,15 @@ export default function ExitIntentSurvey() {
 
 	const closeSurvey = useCallback(
 		(reason: DismissalReason) => {
+			if (reason === 'submitted') {
+				markReturningVisitor()
+			}
 			setVisible(false)
 			lastClosedRef.current = Date.now()
 			triggeredRef.current = true
 			persistDismissal(reason)
 		},
-		[persistDismissal]
+		[persistDismissal, markReturningVisitor]
 	)
 
 	const openSurvey = useCallback(() => {
@@ -111,6 +138,8 @@ export default function ExitIntentSurvey() {
 					throw new Error('Request failed')
 				}
 
+				setLastSubmissionReturning(isReturningVisitor)
+				markReturningVisitor()
 				setStatus('success')
 				setTimeout(() => closeSurvey('submitted'), 1200)
 			} catch (error) {
@@ -118,7 +147,7 @@ export default function ExitIntentSurvey() {
 				setStatus('server-error')
 			}
 		},
-		[closeSurvey, isSubmitting, pathname]
+		[closeSurvey, isReturningVisitor, isSubmitting, markReturningVisitor, pathname]
 	)
 
 	useEffect(() => {
@@ -251,10 +280,19 @@ export default function ExitIntentSurvey() {
 						Close
 					</button>
 				</div>
+				{isReturningVisitor && status !== 'success' && (
+					<p className="exit-survey-welcome" role="status">
+						Welcome back! We&rsquo;re glad to support you again.
+					</p>
+				)}
 				{status === 'success' ? (
 					<div className="exit-survey-success" role="status">
-						<p className="exit-survey-success-title">Thank you for helping us improve.</p>
-						<p>We read every note to make accessing care easier for the next family.</p>
+						<p className="exit-survey-success-title">Thank you for submitting your feedback!</p>
+						<p>
+							{lastSubmissionReturning
+								? 'Welcome back—we appreciate you taking the time to guide us again.'
+								: 'We read every note to make accessing care easier for the next family who visits.'}
+						</p>
 					</div>
 				) : (
 					<form className="exit-survey-form" onSubmit={handleSubmit}>
@@ -280,9 +318,6 @@ export default function ExitIntentSurvey() {
 											resetServerError()
 											if (choice.value === OUTCOMES.FOUND) {
 												setExplanation('')
-												if (!isSubmitting) {
-													void sendFeedback({ outcome: OUTCOMES.FOUND, email })
-												}
 											}
 										}}
 										disabled={isSubmitting}
@@ -338,30 +373,16 @@ export default function ExitIntentSurvey() {
 								We couldn’t save that just yet. Please try again in a moment.
 							</p>
 						)}
-						{outcome !== OUTCOMES.FOUND && (
-							<div className="exit-survey-actions">
+						<div className="exit-survey-actions">
+							{outcome !== OUTCOMES.FOUND && (
 								<a href="/contact" className="btn-outline">
 									Contact us
 								</a>
-								<button type="submit" className="btn-primary" disabled={isSubmitting}>
-									{isSubmitting ? 'Sending…' : 'Send feedback'}
-								</button>
-							</div>
-						)}
-						{outcome === OUTCOMES.FOUND && status === 'server-error' && (
-							<div className="exit-survey-actions">
-								<button
-									type="button"
-									onClick={() => {
-										setStatus('idle')
-										void sendFeedback({ outcome: OUTCOMES.FOUND, email })
-									}}
-									className="btn-primary"
-								>
-									Try again
-								</button>
-							</div>
-						)}
+							)}
+							<button type="submit" className="btn-primary" disabled={isSubmitting}>
+								{isSubmitting ? 'Sending…' : 'Submit feedback'}
+							</button>
+						</div>
 						<p className="exit-survey-footnote">
 							We only use this information to improve the website experience and guide families to the right care.
 						</p>
